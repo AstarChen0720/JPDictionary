@@ -31,7 +31,7 @@ function App() {
       setOrderInput("");
     }
   };
-  
+
   //傳送到櫃檯的魔法:客人喊出指令後(按按鈕或喊指令),就會瞬間被傳送到櫃檯前面(輸入框被focus)
   const teleportToCounter = () => {
     //將客人傳送到標記的位置(櫃檯前面),且將位置效果是將課人"拉"到櫃檯(不要瞬間傳送會暈XD)
@@ -41,6 +41,7 @@ function App() {
 
   //聘請一位傾聽者,去聽整間餐廳客人在講什麼,聽到客人說出特定的話時,就會使用傳送到櫃檯的魔法將客人傳送到櫃檯前面
   useEffect(() => {
+    //如果有人說出指令要做的SOP
     const keyboardListener = (e) => {
       if (e.ctrlKey && e.key === "Enter") {
         //e.ctrlKey看是否有按著Ctrl鍵,e.key看按下的是哪個鍵,如果是Enter鍵的話
@@ -49,34 +50,73 @@ function App() {
     };
     //派傾聽者去聽整間餐廳
     window.addEventListener("keydown", keyboardListener); //在整間餐廳(window),聘用一位傾聽者來聽keydown事件,當有按鍵被按下時就執行keyboardListener這個動作
-    //在工頭要重新指派工作(重新渲染)前,先把現在的傾聽者解雇掉,不然會越來越多人
+    //在便當店關閉時將傾聽者解雇掉,不然會越來越多人
     return () => {
-    window.removeEventListener("keydown", keyboardListener); //在整間餐廳中做"聽keydown事件且執行keyboardListener"這個工作的傾聽者解雇掉(括號內要一模一樣)
+      window.removeEventListener("keydown", keyboardListener); //在整間餐廳中做"聽keydown事件且執行keyboardListener"這個工作的傾聽者解雇掉(括號內要一模一樣),這裡的return代表這是便當店關閉時要做的工作,而不是要交回什麼東西
     };
-  }, []); //空陣列代表這個合約只會在工頭每次指派工作(渲染)時執行一次
+  }, []); //空陣列代表這個合約只會這間店每次重新卸載再重建(掛載)時執行一次
+
+  //翻到指定便當頁數的魔法:點下歷史便當的書籤後,就會自動翻到指定便當的那一頁
+  const scrollToBendo = (bendoId) => {
+    const bendoelement = document.getElementById(`bendo-${bendoId}`); //找對應的便當的id
+    if (bendoelement) {
+      bendoelement.scrollIntoView({ behavior: "smooth", block: "start" }); //如果有id的話,就將視角用平滑的方式移到那個歷史便當的那一頁,且將那一頁移到視角的最上方
+    }
+  };
 
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
   return (
     <>
-      <div className="BendoShop">
-        {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
-        <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
-          <h2>單字便當店櫃檯</h2>
-          <input
-            type="text"
-            placeholder="請點餐"
-            ref={counterRef} //將標記加在輸入框這東西上
-            value={orderInput} //這輸入框的內容是點單筆記本上的內容
-            onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
-            //下面是當客人按下Enter鍵就執行點餐流程
-            onKeyDown={(e) => {
-              if (e.key === "Enter")
-                //如果按下的是Enter鍵
-                takeOrder(); //就執行點餐流程
-            }}
-          />
-          {/* 再在櫃檯增加一個點餐按鈕,如果按下就送出客人的點單 */}
-          <button onClick={takeOrder}>下單</button>
+      <div className="BendoShop" style={{ display: "flex" }}>
+        {/* --- 索引標籤區 (書籤) --- */}
+        <div
+          className="orderHistory-index"
+          style={{
+            position: "fixed",
+            left: "20px",
+            top: "20vh",
+            maxHeight: "60vh",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "5px",
+            zIndex: 100,
+          }}
+        >
+          <p>歷史便當快速選單</p>
+          {orderHistory.map((bendo) => {
+            return (
+              <button
+                key={bendo.id}
+                onClick={() => scrollToBendo(bendo.id)}
+                style={{ padding: "5px", fontSize: "12px", cursor: "pointer" }}
+              >
+                {bendo.mainDish}
+                {/* 用主菜名當標籤 */}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ flex: 1 }}>
+          {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
+          <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
+            <h2>單字便當店櫃檯</h2>
+            <input
+              type="text"
+              placeholder="請點餐"
+              ref={counterRef} //將標記加在輸入框這東西上
+              value={orderInput} //這輸入框的內容是點單筆記本上的內容
+              onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
+              //下面是當客人按下Enter鍵就執行點餐流程
+              onKeyDown={(e) => {
+                if (e.key === "Enter")
+                  //如果按下的是Enter鍵
+                  takeOrder(); //就執行點餐流程
+              }}
+            />
+            {/* 再在櫃檯增加一個點餐按鈕,如果按下就送出客人的點單 */}
+            <button onClick={takeOrder}>下單</button>
+          </div>
         </div>
         {/* 櫃檯--歷史訂單顯示區 */}
         <div className="orderHistory-display">
@@ -86,6 +126,7 @@ function App() {
             return (
               <div
                 key={bendo.id}
+                id={`bendo-${bendo.id}`} //給每個便當一個獨特的id,加上bendo-前綴方便辨識
                 className="bendo-card"
                 style={{
                   height: "100vh",
