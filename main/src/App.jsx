@@ -19,6 +19,7 @@ function App() {
       //做出對應的便當
       const newBendo = {
         id: Date.now(),
+        bendoName:orderInput,
         mainDish: `${orderInput}的主菜`,
         side1: `${orderInput}的配菜1`,
         side2: `${orderInput}的配菜2`,
@@ -67,20 +68,20 @@ function App() {
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
   return (
     <>
-      <div className="BendoShop" style={{ display: "flex" }}>
+      <div className="BendoShop" style={{ display: "flex",gap:"20px", padding: "20px" }}>
         {/* --- 索引標籤區 (書籤) --- */}
         <div
           className="orderHistory-index"
           style={{
-            position: "fixed",
-            left: "20px",
+            position: "sticky",
+            width: "200px",
+            flexShrink: 0,//不讓這個區塊縮小(防止右邊東西太多時被擠扁)
             top: "20vh",
             maxHeight: "60vh",
             overflowY: "auto",
             display: "flex",
             flexDirection: "column",
             gap: "5px",
-            zIndex: 100,
           }}
         >
           <p>歷史便當快速選單</p>
@@ -97,7 +98,8 @@ function App() {
             );
           })}
         </div>
-        <div style={{ flex: 1 }}>
+
+        <div style={{flex: 1, display:"flex", flexDirection: "column" }}>
           {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
           <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
             <h2>單字便當店櫃檯</h2>
@@ -117,35 +119,38 @@ function App() {
             {/* 再在櫃檯增加一個點餐按鈕,如果按下就送出客人的點單 */}
             <button onClick={takeOrder}>下單</button>
           </div>
+
+          {/* 櫃檯--歷史訂單顯示區 */}
+          <div className="orderHistory-display">
+            {/* 將歷史訂單筆記本裡面的清單一筆一筆拿出來抄到上面顯示出來給客人看 */}
+            {orderHistory.map((bendo) => {
+              //用map遍歷歷史訂單筆記本裡面的每一筆訂單並且傳到bendo這個變數裡面
+              return (
+                <div
+                  key={bendo.id}
+                  id={`bendo-${bendo.id}`} //給每個便當一個獨特的id,加上bendo-前綴方便辨識
+                  className="bendo-card"
+                  style={{
+                    flex: 1,
+                    height: "100vh",
+                    border: "2px dashed #ccc",
+                    padding: "20px",
+                  }}
+                >
+                  <h3>單字便當：{bendo.bendoName}</h3>
+                  <ul>
+                    <li>主菜：{bendo.mainDish}</li>
+                    <li>配菜1：{bendo.side1}</li>
+                    <li>配菜2：{bendo.side2}</li>
+                    <li>飯：{bendo.rice}</li>
+                    <li>湯：{bendo.soup}</li>
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        {/* 櫃檯--歷史訂單顯示區 */}
-        <div className="orderHistory-display">
-          {/* 將歷史訂單筆記本裡面的清單一筆一筆拿出來抄到上面顯示出來給客人看 */}
-          {orderHistory.map((bendo) => {
-            //用map遍歷歷史訂單筆記本裡面的每一筆訂單並且傳到bendo這個變數裡面
-            return (
-              <div
-                key={bendo.id}
-                id={`bendo-${bendo.id}`} //給每個便當一個獨特的id,加上bendo-前綴方便辨識
-                className="bendo-card"
-                style={{
-                  height: "100vh",
-                  border: "2px dashed #ccc",
-                  padding: "20px",
-                }}
-              >
-                <h3>單字便當：{bendo.mainDish}</h3>
-                <ul>
-                  <li>主菜：{bendo.mainDish}</li>
-                  <li>配菜1：{bendo.side1}</li>
-                  <li>配菜2：{bendo.side2}</li>
-                  <li>飯：{bendo.rice}</li>
-                  <li>湯：{bendo.soup}</li>
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+
         {/* 傳送到櫃檯的魔法按鈕 */}
         <button
           onClick={teleportToCounter}
