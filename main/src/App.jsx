@@ -1,6 +1,12 @@
 // useState就是一本筆記本用來紀錄東西,而useRef就是用來定位的,他就是一個標記,用來標記你想要標的東西位置或狀態,他會將他標的東西的所有資訊都存在他的裡面叫current的盒子,useEffect就是一份合約,他會讓員工在你訂好的時間下去做某件工作
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
+//從google/generative-ai團隊請GoogleGenerativeAI這位中央廚房在我們餐廳的"駐點服務人員"來讓我們可以跟中央廚房溝通
+import {GoogleGenerativeAI} from '@google/generative-ai';
+
+//拿出我們的會員卡,並且讓駐點服務人員根據會員卡上寫的身份(例如普通會員,黃金會員),來訂好能給我們提供的服務內容
+const API_KEY = "AIzaSyCE7lkxOjUAndDJ257v9havAGDsBAgOyWo";
+const genAI = new GoogleGenerativeAI(API_KEY);
 
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
@@ -12,24 +18,70 @@ function App() {
   //拿一個標記來標記輸入框的位置
   const counterRef = useRef(null);
 
-  //點餐流程:當客人按下"送出訂單"按鈕後,依照當前點單筆記本的內容,拿出對應的"紙板便當"(因為目前沒有廚師)給客人,並且把詳細的訂單內容(不是客人講的話,而是實際的出餐內容)抄到歷史訂單筆記本後,把這頁撕掉丟垃圾桶
-  const takeOrder = () => {
+  //拿一個筆記本本來紀錄現在中央廚房是不是正在煮飯中
+  const [isLoading, setIsLoading] = useState(false);
+
+  //點餐SOP(新):當客人按下"送出訂單"按鈕後,
+  // 依照當前點單筆記本的內容,跟駐點服務人員說要跟廚師說的指令(歷如這菜要怎麼煮)
+  // 然後將內容傳給駐點服務人員請他幫我轉交給中央廚房
+  // 做完後從駐點服務人員拿到菜盒
+  // 打開菜盒並將菜排好
+  // 將實際出餐內容(有時客人講不清楚是店員自己修改的)抄到歷史訂單筆記本後,把點單筆記本的這頁撕掉丟垃圾桶
+  const takeOrder = async () => {//async如果有等的步驟,就先去做別的事
     //檢查如果點單不是空的再去做便當
     if (orderInput !== "") {
-      //做出對應的便當
-      const newBendo = {
-        id: Date.now(),
-        bendoName:orderInput,
-        mainDish: `${orderInput}的主菜`,
-        side1: `${orderInput}的配菜1`,
-        side2: `${orderInput}的配菜2`,
-        rice: `${orderInput}的飯`,
-        soup: `${orderInput}的湯`,
-      };
-      //把當前的出餐,抄到歷史訂單筆記本上(寫在最前面)
-      setOrderHistory([newBendo, ...orderHistory]);
-      //把點單筆記本的這頁撕掉,這樣下個客人的點餐才不會混在一起
-      setOrderInput("");
+      //try可以有catch來告訴我們遇到哪些意料之外的錯誤(error)
+      try {
+        //先打開"正在煮飯中"的燈
+        setIsLoading(true);
+
+        //跟駐點服務人員說要給指定的廚師和給廚師的指令
+        //getGenerativeModel是代表我要使用管理廚房的功能
+        const aiModel = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash", //代表我要的廚師種類
+          //指令內容
+          systemInstruction: `
+          你是一位精通日文教學的專業廚師。
+          當我給你一個日文單字時，請嚴格遵守以下規則：
+          1. 輸出格式必須是純 JSON 物件。
+          2. JSON 欄位必須固定為：word, reading, meaning, accent, example_ja, example_zh。
+          3. 請使用繁體中文回覆。
+          4. 絕對不要包含任何 Markdown 標籤，如 \`\`\`json 或 \`\`\`。
+          5. 只要輸出 JSON 本身，不要有任何前言或後記。
+          `,
+        });
+
+        //叫那位廚師依據我們的指令幫客人的點單做出對應的菜,並送回來
+        const result = await aiModel.generateContent(orderInput); //await是代表要等到廚師做好菜才繼續往下做
+        //從廚師送回來的東西中(他會用一個箱子裝,但裡面可能有送貨地址等其他東西),取出我們要的菜的盒子,然後取出裡面的菜
+        const response = result.response;
+        const responseText = response.text(); //text要加括號,因為裡面的東西是二進制格式,text()就是把text部份的二進制內容翻譯成文字的意思
+
+        //然後因為菜全部都糊在一起,所以要把他們分開方便裝成便當
+        const bendoMeals = JSON.parse(responseText);
+
+        //做出對應的便當
+        const newBendo = {
+          id: Date.now(),
+          bendoName: orderInput, // 便當名稱:用客人點的內容當便當名稱
+          chtMeaning: bendoMeals.meaning, // 主菜：中文意思
+          reading: bendoMeals.reading, // 配菜1：讀音
+          accent: bendoMeals.accent, // 配菜2：重音
+          example_ja: bendoMeals.example_ja, // 飯：日文例句
+          example_zh: bendoMeals.example_zh, // 湯：中文例句
+        };
+
+        //把當前的出餐,抄到歷史訂單筆記本上(寫在最前面)
+        setOrderHistory([newBendo, ...orderHistory]);
+        //把點單筆記本的這頁撕掉,這樣下個客人的點餐才不會混在一起
+        setOrderInput("");
+      } catch (error) {
+        console.error("點餐SOP錯誤回報",error);//用紅字印出error內容,error()是用紅字的意思(error)才是錯誤內容
+      }finally{//收工例行公式,不管有沒有錯誤發生,最後都要做的工作
+        setIsLoading(false);//關掉"正在煮飯中"的燈
+      }
+      
+      
     }
   };
 
@@ -68,14 +120,17 @@ function App() {
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
   return (
     <>
-      <div className="BendoShop" style={{ display: "flex",gap:"20px", padding: "20px" }}>
+      <div
+        className="BendoShop"
+        style={{ display: "flex", gap: "20px", padding: "20px" }}
+      >
         {/* --- 索引標籤區 (書籤) --- */}
         <div
           className="orderHistory-index"
           style={{
             position: "sticky",
             width: "200px",
-            flexShrink: 0,//不讓這個區塊縮小(防止右邊東西太多時被擠扁)
+            flexShrink: 0, //不讓這個區塊縮小(防止右邊東西太多時被擠扁)
             top: "20vh",
             maxHeight: "60vh",
             overflowY: "auto",
@@ -92,14 +147,14 @@ function App() {
                 onClick={() => scrollToBendo(bendo.id)}
                 style={{ padding: "5px", fontSize: "12px", cursor: "pointer" }}
               >
-                {bendo.mainDish}
+                {bendo.bendoName}
                 {/* 用主菜名當標籤 */}
               </button>
             );
           })}
         </div>
 
-        <div style={{flex: 1, display:"flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
           <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
             <h2>單字便當店櫃檯</h2>
@@ -111,13 +166,15 @@ function App() {
               onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
               //下面是當客人按下Enter鍵就執行點餐流程
               onKeyDown={(e) => {
-                if (e.key === "Enter")
-                  //如果按下的是Enter鍵
+                if (e.key === "Enter" && !isLoading)
+                  //如果按下的是Enter鍵且不是正在煮飯中的話
                   takeOrder(); //就執行點餐流程
               }}
             />
-            {/* 再在櫃檯增加一個點餐按鈕,如果按下就送出客人的點單 */}
-            <button onClick={takeOrder}>下單</button>
+            {/* 再在櫃檯增加一個點餐按鈕,如果正在煮飯就顯示餐點製作中且不能按下,正常情況下按下就送出客人的點單 */}
+            <button onClick={takeOrder} disabled={isLoading}>
+              {isLoading ? "餐點製作中..." : "下單"}
+            </button>
           </div>
 
           {/* 櫃檯--歷史訂單顯示區 */}
@@ -139,11 +196,11 @@ function App() {
                 >
                   <h3>單字便當：{bendo.bendoName}</h3>
                   <ul>
-                    <li>主菜：{bendo.mainDish}</li>
-                    <li>配菜1：{bendo.side1}</li>
-                    <li>配菜2：{bendo.side2}</li>
-                    <li>飯：{bendo.rice}</li>
-                    <li>湯：{bendo.soup}</li>
+                    <li>中文意思：{bendo.chtMeaning}</li>
+                    <li>讀音：{bendo.reading}</li>
+                    <li>重音：{bendo.accent}</li>
+                    <li>日文例句：{bendo.example_ja}</li>
+                    <li>中文例句：{bendo.example_zh}</li>
                   </ul>
                 </div>
               );
