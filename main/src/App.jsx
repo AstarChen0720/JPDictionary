@@ -5,7 +5,7 @@ import "./App.css";
 import {GoogleGenerativeAI} from '@google/generative-ai';
 
 //拿出我們的會員卡,並且讓駐點服務人員根據會員卡上寫的身份(例如普通會員,黃金會員),來訂好能給我們提供的服務內容
-const API_KEY = "AIzaSyCE7lkxOjUAndDJ257v9havAGDsBAgOyWo";
+const API_KEY = "AIzaSyD1S8-6LEVvzdWFT2LwmYlscGqxNf4ogvY";
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 function App() {
@@ -20,6 +20,7 @@ function App() {
 
   //拿一個筆記本本來紀錄現在中央廚房是不是正在煮飯中
   const [isLoading, setIsLoading] = useState(false);
+
 
   //點餐SOP(新):當客人按下"送出訂單"按鈕後,
   // 依照當前點單筆記本的內容,跟駐點服務人員說要跟廚師說的指令(歷如這菜要怎麼煮)
@@ -84,6 +85,60 @@ function App() {
       
     }
   };
+
+  //念讀音SOP:當客人問如何念時,播音公司的駐點服務人員就會將客人問的字轉問給他們公司內部,然後將播音公司寄回的CD放到播放器中播給客人聽
+  const howToSpeech = async(howToSpeechText) =>{
+    try{
+      //要給播音公司的包裹(委託書)
+      const speechOrder = {
+        "audioConfig": {
+          "audioEncoding": "MP3",//編碼格式(要寄回的是錄音帶還是CD...)
+          "pitch": 0,//音調高低
+          "speakingRate": 1,//說話速度
+        },
+        "input": {"text": howToSpeechText},//要念的內容
+        "voice": { //聲音設定
+          "languageCode": "ja-JP",
+          "name": "ja-JP-Chirp3-HD-Autonoe"
+        }
+      }
+
+      //放入會員資訊並寄給播音公司
+        const SPEECH_API_KEY = "AIzaSyCxlZ9eq6aa2DjYbcIq03Kon7qRJdWr0ic";//會員資訊
+        const response = await fetch( //fetch是郵差他會將包裹寄去再送回對方的回擲,他需要地址和包裹,fetch(地址,包裹(有一堆選項))
+          //地址
+          `https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=${SPEECH_API_KEY}`,
+          //包裹
+          {
+            method : "POST",//投遞目的(ex訂購,退貨...)
+            headers: {"Content-Type": "application/json"},//說明標籤(ex:內含易碎物品)
+            body: JSON.stringify(speechOrder)//包裹本身,且將包裹本身裝成易於運送的盒子(郵包)寄出
+          }
+        )
+        
+        const speechCD = await response.json();//取出播音公司寄回的包裹內容(CD)並拆開盒子取出,.json()代表抓body的內容並轉成JSON格式
+
+        //將CD放到播放器中播給客人聽
+        if(speechCD.audioContent){
+          //設定好播放器的模式(可能是CD模式,可能是錄音帶模式...)
+          const speechAudioSrc = `data:audio/mp3;base64,${speechCD.audioContent}`;
+          //將CD放入播放器
+          const speechAudio = new Audio(speechAudioSrc);
+          //按開始播放
+          speechAudio.play();
+        }
+    } catch (error){
+      console.error("念讀音SOP錯誤回報",error)
+    }
+  }
+
+
+
+
+
+
+
+
 
   //傳送到櫃檯的魔法:客人喊出指令後(按按鈕或喊指令),就會瞬間被傳送到櫃檯前面(輸入框被focus)
   const teleportToCounter = () => {
@@ -194,12 +249,28 @@ function App() {
                     padding: "20px",
                   }}
                 >
-                  <h3>單字便當：{bendo.bendoName}</h3>
+                  <h3>
+                    單字便當：{bendo.bendoName}
+                    <button
+                      onClick={() => howToSpeech(bendo.bendoName)}
+                      style={{ marginLeft: "10px" }}
+                    >
+                      🔊
+                    </button>
+                  </h3>
                   <ul>
                     <li>中文意思：{bendo.chtMeaning}</li>
                     <li>讀音：{bendo.reading}</li>
                     <li>重音：{bendo.accent}</li>
-                    <li>日文例句：{bendo.example_ja}</li>
+                    <li>
+                      日文例句：{bendo.example_ja}
+                      <button
+                        onClick={() => howToSpeech(bendo.example_ja)}
+                        style={{ marginLeft: "10px", fontSize: "12px" }}
+                      >
+                        🔊
+                      </button>
+                    </li>
                     <li>中文例句：{bendo.example_zh}</li>
                   </ul>
                 </div>
@@ -224,5 +295,4 @@ function App() {
     </>
   );
 }
-
 export default App;
