@@ -5,7 +5,7 @@ import "./App.css";
 import {GoogleGenerativeAI} from '@google/generative-ai';
 
 //拿出我們的會員卡,並且讓駐點服務人員根據會員卡上寫的身份(例如普通會員,黃金會員),來訂好能給我們提供的服務內容
-const AI_API_KEY = import.meta.env.AI_API_KEY;//從皮夾內拿會員卡
+const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;//從皮夾內拿會員卡
 const genAI = new GoogleGenerativeAI(AI_API_KEY);
 
 function App() {
@@ -21,6 +21,8 @@ function App() {
   //拿一個筆記本本來紀錄現在中央廚房是不是正在煮飯中
   const [isLoading, setIsLoading] = useState(false);
 
+  //拿一盒子放播音公司寄來的CD
+  const [speechAudioBox, setSpeechAudioBox] = useState({});
 
   //點餐SOP(新):當客人按下"送出訂單"按鈕後,
   // 依照當前點單筆記本的內容,跟駐點服務人員說要跟廚師說的指令(歷如這菜要怎麼煮)
@@ -28,7 +30,8 @@ function App() {
   // 做完後從駐點服務人員拿到菜盒
   // 打開菜盒並將菜排好
   // 將實際出餐內容(有時客人講不清楚是店員自己修改的)抄到歷史訂單筆記本後,把點單筆記本的這頁撕掉丟垃圾桶
-  const takeOrder = async () => {//async如果有等的步驟,就先去做別的事
+  const takeOrder = async () => {
+    //async如果有等的步驟,就先去做別的事
     //檢查如果點單不是空的再去做便當
     if (orderInput !== "") {
       //try可以有catch來告訴我們遇到哪些意料之外的錯誤(error)
@@ -77,68 +80,80 @@ function App() {
         //把點單筆記本的這頁撕掉,這樣下個客人的點餐才不會混在一起
         setOrderInput("");
       } catch (error) {
-        console.error("點餐SOP錯誤回報",error);//用紅字印出error內容,error()是用紅字的意思(error)才是錯誤內容
-      }finally{//收工例行公式,不管有沒有錯誤發生,最後都要做的工作
-        setIsLoading(false);//關掉"正在煮飯中"的燈
+        console.error("點餐SOP錯誤回報", error); //用紅字印出error內容,error()是用紅字的意思(error)才是錯誤內容
+      } finally {
+        //收工例行公式,不管有沒有錯誤發生,最後都要做的工作
+        setIsLoading(false); //關掉"正在煮飯中"的燈
       }
-      
-      
     }
   };
 
-  //念讀音SOP:當客人問如何念時,播音公司的駐點服務人員就會將客人問的字轉問給他們公司內部,然後將播音公司寄回的CD放到播放器中播給客人聽
-  const howToSpeech = async(howToSpeechText) =>{
-    try{
+  //念讀音SOP:當客人問如何念時,先檢查現在的CD盒內有沒有對應的CD有就直接拿來播,沒有的話就將客人想問的字寄到播音公司,然後將播音公司寄回的CD放到播放器中播給客人聽,再將CD放到CD盒內以備下次使用
+  //howToSpeechText是客人想問的字(看下面button的onClick)
+  const howToSpeech = async (howToSpeechText) => {
+    //先檢查CD盒內有沒有對應的CD,有得話直接拿來播
+    if (speechAudioBox[howToSpeechText]) {
+      //讓店員大喊正在做什麼來掌握現在執行進度(測試用)
+      console.log("正在播放現成的CD");
+      //設定好播放器的模式(可能是CD模式,可能是錄音帶模式...)
+      const speechAudioSrc = `data:audio/mp3;base64,${speechAudioBox[howToSpeechText]}`; //${...}代表要放入的CD
+      //將CD放入播放器
+      const speechAudio = new Audio(speechAudioSrc);
+      //按開始播放
+      speechAudio.play();
+      return; //結束這個念讀音SOP,不要再去跟播音公司買CD
+    }
+    //沒有現成的CD故要去跟播音公司買
+    try {
+      console.log("沒有現成CD，準備寄信給播音公司...");
       //要給播音公司的包裹(委託書)
       const speechOrder = {
-        "audioConfig": {
-          "audioEncoding": "MP3",//編碼格式(要寄回的是錄音帶還是CD...)
-          "pitch": 0,//音調高低
-          "speakingRate": 1,//說話速度
+        audioConfig: {
+          audioEncoding: "MP3", //編碼格式(要寄回的是錄音帶還是CD...)
+          pitch: 0, //音調高低
+          speakingRate: 1, //說話速度
         },
-        "input": {"text": howToSpeechText},//要念的內容
-        "voice": { //聲音設定
-          "languageCode": "ja-JP",
-          "name": "ja-JP-Chirp3-HD-Autonoe"
-        }
-      }
+        input: { text: howToSpeechText }, //要念的內容
+        voice: {
+          //聲音設定
+          languageCode: "ja-JP",
+          name: "ja-JP-Chirp3-HD-Autonoe",
+        },
+      };
 
       //放入會員資訊並寄給播音公司
-        const SPEECH_API_KEY = import.meta.env.SPEECH_API_KEY;//從皮夾拿會員編號
-        const response = await fetch( //fetch是郵差他會將包裹寄去再送回對方的回擲,他需要地址和包裹,fetch(地址,包裹(有一堆選項))
-          //地址
-          `https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=${SPEECH_API_KEY}`,
-          //包裹
-          {
-            method : "POST",//投遞目的(ex訂購,退貨...)
-            headers: {"Content-Type": "application/json"},//說明標籤(ex:內含易碎物品)
-            body: JSON.stringify(speechOrder)//包裹本身,且將包裹本身裝成易於運送的盒子(郵包)寄出
-          }
-        )
-        
-        const speechCD = await response.json();//取出播音公司寄回的包裹內容(CD)並拆開盒子取出,.json()代表抓body的內容並轉成JSON格式
-
-        //將CD放到播放器中播給客人聽
-        if(speechCD.audioContent){
-          //設定好播放器的模式(可能是CD模式,可能是錄音帶模式...)
-          const speechAudioSrc = `data:audio/mp3;base64,${speechCD.audioContent}`;
-          //將CD放入播放器
-          const speechAudio = new Audio(speechAudioSrc);
-          //按開始播放
-          speechAudio.play();
+      const SPEECH_API_KEY = import.meta.env.VITE_SPEECH_API_KEY; //從皮夾拿會員編號
+      const response = await fetch(
+        //fetch是郵差他會將包裹寄去再送回對方的回擲,他需要地址和包裹,fetch(地址,包裹(有一堆選項))
+        //地址
+        `https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=${SPEECH_API_KEY}`,
+        //包裹
+        {
+          method: "POST", //投遞目的(ex訂購,退貨...)
+          headers: { "Content-Type": "application/json" }, //說明標籤(ex:內含易碎物品)
+          body: JSON.stringify(speechOrder), //包裹本身,且將包裹本身裝成易於運送的盒子(郵包)寄出
         }
-    } catch (error){
-      console.error("念讀音SOP錯誤回報",error)
+      );
+
+      const speechCD = await response.json(); //取出播音公司寄回的包裹內容(CD)並拆開盒子取出,.json()代表抓body的內容並轉成JSON格式
+      //如果有收到CD有內容的話
+      if (speechCD.audioContent) {
+        //設定好播放器的模式(可能是CD模式,可能是錄音帶模式...)
+        const speechAudioSrc = `data:audio/mp3;base64,${speechCD.audioContent}`;
+        //將CD放入播放器
+        const speechAudio = new Audio(speechAudioSrc);
+        //按開始播放
+        speechAudio.play();
+        //將CD放到CD盒內
+        setSpeechAudioBox({
+          ...speechAudioBox, //展開舊物件
+          [howToSpeechText]: speechCD.audioContent,//用客人想問的字當作key來放CD
+        });
+      }
+    } catch (error) {
+      console.error("念讀音SOP錯誤回報", error);
     }
-  }
-
-
-
-
-
-
-
-
+  };
 
   //傳送到櫃檯的魔法:客人喊出指令後(按按鈕或喊指令),就會瞬間被傳送到櫃檯前面(輸入框被focus)
   const teleportToCounter = () => {
