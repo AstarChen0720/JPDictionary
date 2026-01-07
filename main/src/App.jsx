@@ -5,8 +5,8 @@ import "./App.css";
 import {GoogleGenerativeAI} from '@google/generative-ai';
 
 //拿出我們的會員卡,並且讓駐點服務人員根據會員卡上寫的身份(例如普通會員,黃金會員),來訂好能給我們提供的服務內容
-const API_KEY = "AIzaSyD1S8-6LEVvzdWFT2LwmYlscGqxNf4ogvY";
-const genAI = new GoogleGenerativeAI(API_KEY);
+const AI_API_KEY = import.meta.env.AI_API_KEY;//從皮夾內拿會員卡
+const genAI = new GoogleGenerativeAI(AI_API_KEY);
 
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
@@ -104,7 +104,7 @@ function App() {
       }
 
       //放入會員資訊並寄給播音公司
-        const SPEECH_API_KEY = "AIzaSyCxlZ9eq6aa2DjYbcIq03Kon7qRJdWr0ic";//會員資訊
+        const SPEECH_API_KEY = import.meta.env.SPEECH_API_KEY;//從皮夾拿會員編號
         const response = await fetch( //fetch是郵差他會將包裹寄去再送回對方的回擲,他需要地址和包裹,fetch(地址,包裹(有一堆選項))
           //地址
           `https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=${SPEECH_API_KEY}`,
