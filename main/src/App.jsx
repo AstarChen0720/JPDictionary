@@ -2,11 +2,21 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 //從google/generative-ai團隊請GoogleGenerativeAI這位中央廚房在我們餐廳的"駐點服務人員"來讓我們可以跟中央廚房溝通
-import {GoogleGenerativeAI} from '@google/generative-ai';
 
+import {GoogleGenerativeAI} from '@google/generative-ai';
 //拿出我們的會員卡,並且讓駐點服務人員根據會員卡上寫的身份(例如普通會員,黃金會員),來訂好能給我們提供的服務內容
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY;//從皮夾內拿會員卡
 const genAI = new GoogleGenerativeAI(AI_API_KEY);
+
+//從supabase/supabase-js團隊請createClient這位倉儲駐點人員來幫我們跟倉儲公司溝通
+import { createClient } from '@supabase/supabase-js'
+//倉庫地址
+const supabaseUrl = "https://olyziedvrshemjhpdipz.supabase.co"; 
+//從皮夾內拿supabase倉庫的通行證
+const SUPABASE_API_KEY = import.meta.env.VITE_SUPABASE_API_KEY;
+//讓倉儲駐點人員根據倉庫地址和通行證準備好服務我們(ex跟他講要我的倉庫地址才知道要去哪個倉庫) 
+const supabase = createClient(supabaseUrl, SUPABASE_API_KEY);
+
 
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
@@ -48,7 +58,7 @@ function App() {
           你是一位精通日文教學的專業廚師。
           當我給你一個日文單字時，請嚴格遵守以下規則：
           1. 輸出格式必須是純 JSON 物件。
-          2. JSON 欄位必須固定為：word, reading, meaning, accent, example_ja, example_zh。
+          2. JSON 欄位必須固定為：word, reading, meaning, accent, example_ja, example_cht。
           3. 請使用繁體中文回覆。
           4. 絕對不要包含任何 Markdown 標籤，如 \`\`\`json 或 \`\`\`。
           5. 只要輸出 JSON 本身，不要有任何前言或後記。
@@ -72,14 +82,36 @@ function App() {
           reading: bendoMeals.reading, // 配菜1：讀音
           accent: bendoMeals.accent, // 配菜2：重音
           example_ja: bendoMeals.example_ja, // 飯：日文例句
-          example_zh: bendoMeals.example_zh, // 湯：中文例句
+          example_cht: bendoMeals.example_cht, // 湯：中文例句
         };
 
-        //把當前的出餐,抄到歷史訂單筆記本上(寫在最前面)
-        setOrderHistory([newBendo, ...orderHistory]);
+        //把當前的出餐,抄到歷史訂單筆記本上(寫在最前面),加上prev是保證他是修改最新的訂單筆記本內容,不會改到舊的
+        setOrderHistory((prev) => [newBendo, ...prev]);
         //把點單筆記本的這頁撕掉,這樣下個客人的點餐才不會混在一起
         setOrderInput("");
-      } catch (error) {
+        const bendoInSupabase = await addToSupabase(newBendo); //執行向倉庫增加東西的SOP並寄回正在倉庫內放的東西(包含倉庫貨品id)
+        //如果有成功放到倉庫的話(有寄回在貨架上的東西)
+        if(bendoInSupabase){
+          //將倉庫貨品id加到筆記本上對應的便當訂單上
+          setOrderHistory((prev) => {
+            //map會遍歷每一資料後,蒐集回傳的資料組成一個新的陣列回傳出去
+            return prev.map((bendo) => {
+              //如果當前掃到的便當是剛剛做出來的那個
+              if (bendo.id === newBendo.id) {
+                //將倉庫貨品id加到對應的便當上(為newBendo加上supabase_id屬性),並回傳
+                //將bendo物件展開後再加上supabase_id屬性
+                return { ...bendo, supabase_id: bendoInSupabase.id }; 
+                //如不是就回傳原本的便當物件
+                } else {
+                return bendo;
+                };
+              })
+            });
+        } else{
+          console.error("便當未能成功存入倉庫");
+        }
+        ;
+      }catch (error) {
         console.error("點餐SOP錯誤回報", error); //用紅字印出error內容,error()是用紅字的意思(error)才是錯誤內容
       } finally {
         //收工例行公式,不管有沒有錯誤發生,最後都要做的工作
@@ -147,13 +179,49 @@ function App() {
         //將CD放到CD盒內
         setSpeechAudioBox({
           ...speechAudioBox, //展開舊物件
-          [howToSpeechText]: speechCD.audioContent,//用客人想問的字當作key來放CD
+          [howToSpeechText]: speechCD.audioContent, //用客人想問的字當作key來放CD
         });
       }
     } catch (error) {
       console.error("念讀音SOP錯誤回報", error);
     }
   };
+
+  //向倉庫增加東西的SOP:告訴倉儲駐點人員我要增加什麼東西到倉庫裡面,看他回報有沒有成功,成功回傳倉庫貨品id,失敗印出錯誤內容
+  const addToSupabase = async(newBendo) => {
+    try{
+      //supabase.from('bendo_table').insert.select()是一個鏈式指令,袋表一連串連續的指令,前面會影響到後面,有限定只有哪些能用(像是你不能前面說去沙漠,後面說釣魚)
+      //下面代表跟倉儲駐點人員說我要在什麼貨架新增什麼東西,然後記得寄出後不只跟我說有沒有成功,還要複製一份他收到的東西的備份(怕運送時摔壞),和確認單(上有倉庫貨品id跟有錯誤原因(如果有錯誤))包在一起給我
+      const result = await supabase
+        //supabase.from("bendoOrderHistory")代表去倉庫的bendoOrderHistory貨架
+        .from("bendoOrderHistory")
+        //要放入的東西
+        .insert([
+          {
+            bendoName: newBendo.bendoName,
+            chtMeaning: newBendo.chtMeaning,
+            reading: newBendo.reading,
+            accent: newBendo.accent,
+            example_ja: newBendo.example_ja,
+            example_cht: newBendo.example_cht,
+            //user_id:"先不傳等等做登入時再說"
+          },
+        ])
+        //備註,記得存好後,還要複製一份倉庫架上的東西(有標示倉庫貨品id)的備份給我,
+        //預設是成功只會傳data只會有null給我沒有倉庫貨品id,只有失敗才會傳錯誤原因給我,所以才要加上select(),(失敗跟預設一樣data會是null,error會有東西)
+        .select();
+      //如果駐點人員帶回的東西有錯誤原因就丟出錯誤原因讓catch去接
+      if (result.error) {
+        throw result.error;
+      }
+      console.log("倉庫回報：存貨成功！", result.data);
+      return result.data[0]; //回傳架上的東西(是一個物件但他在陣列的箱子內所以用data[0](只有一個東西)把他取出)
+    }catch(error){
+      //接到錯誤後大喊"錯誤!!"並印出錯誤內容
+      console.error("向倉庫增加東西SOP錯誤回報", error);
+      return null;//預設回傳undefined,這樣不好判斷有沒有出錯,改回傳null
+    }
+  }
 
   //傳送到櫃檯的魔法:客人喊出指令後(按按鈕或喊指令),就會瞬間被傳送到櫃檯前面(輸入框被focus)
   const teleportToCounter = () => {
@@ -286,7 +354,7 @@ function App() {
                         🔊
                       </button>
                     </li>
-                    <li>中文例句：{bendo.example_zh}</li>
+                    <li>中文例句：{bendo.example_cht}</li>
                   </ul>
                 </div>
               );
