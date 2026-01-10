@@ -32,6 +32,8 @@ function App() {
 
   //拿一盒子放播音公司寄來的CD
   const [speechAudioBox, setSpeechAudioBox] = useState({});
+  //拿一筆記本來紀錄supabase通行證
+  const [session, setSession] = useState();
 
   //點餐SOP(新):當客人按下"送出訂單"按鈕後,
   // 依照當前點單筆記本的內容,跟駐點服務人員說要跟廚師說的指令(歷如這菜要怎麼煮)
@@ -189,6 +191,12 @@ function App() {
   //向倉庫增加東西的SOP:addToSupabase(想上傳到倉庫的東西),將你給他的東西上傳到倉庫
   //告訴倉儲駐點人員我要增加什麼東西到倉庫裡面,看他回報有沒有成功,成功回傳倉庫貨品id,失敗印出錯誤內容
   const addToSupabase = async (wantUploadBendo) => {
+    //檢查有沒有supabase通行證(有登入的話才可以存檔)
+    if (!session) {
+      console.error("未登入，無法存檔");
+      return null;
+    }
+
     try {
       //supabase.from('bendo_table').insert.select()是一個鏈式指令,袋表一連串連續的指令,前面會影響到後面,有限定只有哪些能用(像是你不能前面說去沙漠,後面說釣魚)
       //下面代表跟倉儲駐點人員說我要在什麼貨架新增什麼東西,然後記得寄出後不只跟我說有沒有成功,還要複製一份他收到的東西的備份(怕運送時摔壞),和確認單(上有倉庫貨品id跟有錯誤原因(如果有錯誤))包在一起給我
@@ -204,7 +212,7 @@ function App() {
             accent: wantUploadBendo.accent,
             example_ja: wantUploadBendo.example_ja,
             example_cht: wantUploadBendo.example_cht,
-            //user_id:"先不傳等等做登入時再說"
+            user_id: session.user.id, //記錄是誰放的
           },
         ])
         //備註,記得存好後,還要複製一份倉庫架上的東西(有標示倉庫貨品id)的備份給我,
@@ -317,6 +325,32 @@ function App() {
     }
   };
 
+  //登入的魔法:將要登入的人的email和password傳給supabase讓他幫我登入
+  const handleLogin = async (email,password) => {
+    //{error}是簡寫法,意思是等號右邊的回傳值中的error取出來把他叫做error變數
+    const {error} = await supabase.auth.signInWithPassword({email,password});
+    //如果失敗就傳出通知
+    if(error) 
+      alert("登入失敗: " + error.message);
+  };
+
+  //註冊的魔法:將要註冊的人的email和password傳給supabase讓他幫我註冊
+  const handleSignUp = async (email, password) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) 
+      alert("註冊失敗: " + error.message);
+    else 
+      alert("註冊成功！請去信箱收信驗證 (如果沒開驗證則直接登入)");
+  };
+
+  //登出的魔法:讓supabase幫我登出
+  const handleLogout = async () => {
+    const { error } = await supabase.auth.signOut();
+    //如果有錯誤就印出來
+    if (error) 
+      console.error("登出錯誤", error);
+  };
+
   //聘請一位傾聽者,去聽整間餐廳客人在講什麼,聽到客人說出特定的話時,就會使用傳送到櫃檯的魔法將客人傳送到櫃檯前面
   useEffect(() => {
     //如果有人說出指令要做的SOP
@@ -334,32 +368,105 @@ function App() {
     };
   }, []); //空陣列代表這個合約只會這間店每次重新卸載再重建(掛載)時執行一次
 
-  //開店任務:在開店時去倉庫取得現在最新資料,並放到店內
+  
   useEffect(() => {
+
+  //任務A開店任務:在開店時去看瀏覽器(localstorage)本地有沒有通行證有就抄到筆記本上,要寫成async函數是因為要等supabase回傳結果
+    //去看看本地有沒有通行證
     const openShopTodo = async () => {
-      console.log("便當店開店中,正在從倉庫同步最新資料...");
-      //執行向倉庫查取東西的SOP
-      const bendoFromSupabase = await fetchFromSupabase();
-      //如果有成功取回東西的話就覆蓋歷史訂單筆記本內容
-      if (bendoFromSupabase) {
-        setOrderHistory(bendoFromSupabase);
-        console.log("開店任務回報:與倉庫貨物同步完成");
-      } else {
-        //失敗就回報錯誤
-        console.log("開店任務回報:向倉庫取貨失敗");
-      }
+      const result = await supabase.auth.getSession();
+      //取出通行證
+      const currentSession = result.data.session;
+      //更新到筆記本上
+      setSession(currentSession);
     };
-    //執行開店任務
     openShopTodo();
+  //任務B監視通行證任務:當通行證狀態有變化就更新最新的通行證到筆記本上
+    //請一個人當保全去監聽通行證狀態有沒有變化,如果有會回傳什麼變化(event)和最新的通行證(session),然後更新到筆記本上
+    //寫成_event是因為我們沒有用到這個參數只是佔位用,(沒用到的參數名前面加上"_"是react的慣例,這樣他就不會跳警告說你有參數沒用到)
+    //請保全時他會回傳一個收工單,這步就是要取出收工單,{data:{subscription}}將他回傳的包裹打開取出data裡的subscription(收工單)
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    //叫工頭記得在便當店拆掉時要叫他收工
+    return () => subscription.unsubscribe();
   }, []); //空陣列代表他只會在開店時執行一次
 
+  
+  useEffect(() => {
+  //任務C同步資料任務:如果通行證內容有變化,就去倉庫取回最新的貨物並更新到筆記本上,或清空筆記本(沒有通行證時,就是登出狀態)
+    if(session){
+      console.log("偵測到會員已登入，開始同步資料...");
+      fetchFromSupabase();
+    }else{
+      // 如果沒通行證(沒登入或登出)就清空筆記本
+      setOrderHistory([]);
+    }
+  }, [session]);//每當session有變化時就重新執行一次,就等同是監視session有沒有變化,有變化就執行一次
+
+
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
+  //如果沒有通行證(沒登入)就顯示登入牆,有通行證(有登入)就顯示便當店內部
+  if (!session) {
+    return (
+      <div
+        className="Login-Wall"
+        style={{ padding: "50px", textAlign: "center" }}
+      >
+        <h1>歡迎來到單字便當店 LV5</h1>
+        <p>請先出示會員證（登入）以開始點餐</p>
+
+        <div
+          style={{
+            maxWidth: "300px",
+            margin: "0 auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+          }}
+        >
+          {/* 這裡簡單做，實際可以用 form */}
+          <input id="email" type="email" placeholder="Email" />
+          <input id="password" type="password" placeholder="Password" />
+
+          <button
+            onClick={() => {
+              const email = document.getElementById("email").value;
+              const password = document.getElementById("password").value;
+              handleLogin(email, password);
+            }}
+          >
+            登入
+          </button>
+
+          <button
+            onClick={() => {
+              const email = document.getElementById("email").value;
+              const password = document.getElementById("password").value;
+              handleSignUp(email, password);
+            }}
+          >
+            註冊新會員
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <div
         className="BendoShop"
         style={{ display: "flex", gap: "20px", padding: "20px" }}
       >
+        {/* 在角落加一個登出按鈕 */}
+        <div
+          style={{ position: "fixed", top: "10px", left: "10px", zIndex: 1000 }}
+        >
+          <span>你好, {session.user.email} </span>
+          <button onClick={handleLogout}>登出</button>
+        </div>
+
         {/* --- 索引標籤區 (書籤) --- */}
         <div
           className="orderHistory-index"
