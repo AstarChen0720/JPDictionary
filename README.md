@@ -85,6 +85,10 @@ LV5要分成兩部分:資料同步,用戶認證(註冊/登入)和資料隔離
   5. 將supabase給的註冊登入登出三個函式寫好方便調用
   6. 寫ui,如果有通行證就直接顯示網站,沒有就覆蓋一個登入/註冊的畫面,並且將supabase給的註冊登入登出三個函式綁定到ui上
   7. 去supabase設定RLS
+
+LV6上線讓人能瀏覽:
+用vercel部署了網站,(記得要讓他的根目錄是main)
+網址[jp-dctionary.vercel.app](https://jp-dctionary.vercel.app/)
 <--現在在這
 
 

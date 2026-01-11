@@ -397,7 +397,15 @@ function App() {
   //任務C同步資料任務:如果通行證內容有變化,就去倉庫取回最新的貨物並更新到筆記本上,或清空筆記本(沒有通行證時,就是登出狀態)
     if(session){
       console.log("偵測到會員已登入，開始同步資料...");
-      fetchFromSupabase();
+      //取回倉庫資料後更新到筆記本上
+      fetchFromSupabase().then((data) => {
+        //如果有東西就更新到筆記本上
+        if (data) {
+          setOrderHistory(data);
+        } else {
+          console.log("同步資料任務回報:獲取會員資料失敗");
+        }
+      });
     }else{
       // 如果沒通行證(沒登入或登出)就清空筆記本
       setOrderHistory([]);
