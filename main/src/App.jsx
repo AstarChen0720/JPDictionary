@@ -8,14 +8,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY; //從皮夾內拿會員卡
 const genAI = new GoogleGenerativeAI(AI_API_KEY);
 
-//從supabase/supabase-js團隊請createClient這位倉儲駐點人員來幫我們跟倉儲公司溝通
-import { createClient } from "@supabase/supabase-js";
-//倉庫地址
-const supabaseUrl = "https://olyziedvrshemjhpdipz.supabase.co";
-//從皮夾內拿supabase倉庫的通行證
-const SUPABASE_API_KEY = import.meta.env.VITE_SUPABASE_API_KEY;
-//讓倉儲駐點人員根據倉庫地址和通行證準備好服務我們(ex跟他講要我的倉庫地址才知道要去哪個倉庫)
-const supabase = createClient(supabaseUrl, SUPABASE_API_KEY);
+//引入已經準備好服務我們的supabase倉儲駐點服務人員
+import supabase from "./supabaseClient.js"; 
+
+//引入登入牆組件,讓我可以像是寫在同一個檔案一樣使用
+import LoginWall from "./components/LoginWall.jsx";
+
+//引入便當卡顯示組件
+import BendoCard from "./components/BendoCard.jsx";
 
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
@@ -325,23 +325,6 @@ function App() {
     }
   };
 
-  //登入的魔法:將要登入的人的email和password傳給supabase讓他幫我登入
-  const handleLogin = async (email,password) => {
-    //{error}是簡寫法,意思是等號右邊的回傳值中的error取出來把他叫做error變數
-    const {error} = await supabase.auth.signInWithPassword({email,password});
-    //如果失敗就傳出通知
-    if(error) 
-      alert("登入失敗: " + error.message);
-  };
-
-  //註冊的魔法:將要註冊的人的email和password傳給supabase讓他幫我註冊
-  const handleSignUp = async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) 
-      alert("註冊失敗: " + error.message);
-    else 
-      alert("註冊成功！請去信箱收信驗證 (如果沒開驗證則直接登入)");
-  };
 
   //登出的魔法:讓supabase幫我登出
   const handleLogout = async () => {
@@ -416,197 +399,86 @@ function App() {
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
   //如果沒有通行證(沒登入)就顯示登入牆,有通行證(有登入)就顯示便當店內部
   if (!session) {
-    return (
-      <div
-        className="Login-Wall"
-        style={{ padding: "50px", textAlign: "center" }}
-      >
-        <h1>歡迎來到單字便當店 LV5</h1>
-        <p>請先出示會員證（登入）以開始點餐</p>
-
-        <div
-          style={{
-            maxWidth: "300px",
-            margin: "0 auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
-          {/* 這裡簡單做，實際可以用 form */}
-          <input id="email" type="email" placeholder="Email" />
-          <input id="password" type="password" placeholder="Password" />
-
-          <button
-            onClick={() => {
-              const email = document.getElementById("email").value;
-              const password = document.getElementById("password").value;
-              handleLogin(email, password);
-            }}
-          >
-            登入
-          </button>
-
-          <button
-            onClick={() => {
-              const email = document.getElementById("email").value;
-              const password = document.getElementById("password").value;
-              handleSignUp(email, password);
-            }}
-          >
-            註冊新會員
-          </button>
-        </div>
-      </div>
-    );
+    return <LoginWall/>
   }
 
   return (
-    <>
+    <div
+      className="BendoShop"
+      style={{ display: "flex", gap: "20px", padding: "20px" }}
+    >
+      {/* 在角落加一個登出按鈕 */}
       <div
-        className="BendoShop"
-        style={{ display: "flex", gap: "20px", padding: "20px" }}
+        style={{ position: "fixed", top: "10px", left: "10px", zIndex: 1000 }}
       >
-        {/* 在角落加一個登出按鈕 */}
-        <div
-          style={{ position: "fixed", top: "10px", left: "10px", zIndex: 1000 }}
-        >
-          <span>你好, {session.user.email} </span>
-          <button onClick={handleLogout}>登出</button>
-        </div>
+        <span>你好, {session.user.email} </span>
+        <button onClick={handleLogout}>登出</button>
+      </div>
 
-        {/* --- 索引標籤區 (書籤) --- */}
-        <div
-          className="orderHistory-index"
-          style={{
-            position: "sticky",
-            width: "200px",
-            flexShrink: 0, //不讓這個區塊縮小(防止右邊東西太多時被擠扁)
-            top: "20vh",
-            maxHeight: "60vh",
-            overflowY: "auto",
-            display: "flex",
-            flexDirection: "column",
-            gap: "5px",
-          }}
-        >
-          <p>歷史便當快速選單</p>
+      {/* --- 索引標籤區 (書籤) --- */}
+      <div
+        className="orderHistory-index"
+        style={{
+          position: "sticky",
+          width: "200px",
+          flexShrink: 0, //不讓這個區塊縮小(防止右邊東西太多時被擠扁)
+          top: "20vh",
+          maxHeight: "60vh",
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "5px",
+        }}
+      >
+        <p>歷史便當快速選單</p>
+        {orderHistory.map((bendo) => {
+          return (
+            <button
+              key={bendo.id}
+              onClick={() => scrollToBendo(bendo.id)}
+              style={{ padding: "5px", fontSize: "12px", cursor: "pointer" }}
+            >
+              {bendo.bendoName}
+              {/* 用主菜名當標籤 */}
+            </button>
+          );
+        })}
+      </div>
+
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
+        <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
+          <h2>單字便當店櫃檯</h2>
+          <input
+            type="text"
+            placeholder="請點餐"
+            ref={counterRef} //將標記加在輸入框這東西上
+            value={orderInput} //這輸入框的內容是點單筆記本上的內容
+            onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
+            //下面是當客人按下Enter鍵就執行點餐流程
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isLoading)
+                //如果按下的是Enter鍵且不是正在煮飯中的話
+                takeOrder(); //就執行點餐流程
+            }}
+          />
+          {/* 再在櫃檯增加一個點餐按鈕,如果正在煮飯就顯示餐點製作中且不能按下,正常情況下按下就送出客人的點單 */}
+          <button onClick={takeOrder} disabled={isLoading}>
+            {isLoading ? "餐點製作中..." : "下單"}
+          </button>
+        </div>
+        {/* 櫃檯--便當顯示區,為何不把.map也搬進去?因為orderHistory很長,且其他人可能也會用到,所以不搬過去才可以都跟同一人拿存取權,比較不亂,其他功能同理 */}
+        <div className="bendo-display">
           {orderHistory.map((bendo) => {
             return (
-              <button
-                key={bendo.id}
-                onClick={() => scrollToBendo(bendo.id)}
-                style={{ padding: "5px", fontSize: "12px", cursor: "pointer" }}
-              >
-                {bendo.bendoName}
-                {/* 用主菜名當標籤 */}
-              </button>
+              <BendoCard
+                bendo={bendo}
+                howToSpeech={howToSpeech}
+                deleteSupabaseItem={deleteSupabaseItem}
+                updateSupabaseItem={updateSupabaseItem}
+              />
             );
           })}
-        </div>
-
-        <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-          {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
-          <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
-            <h2>單字便當店櫃檯</h2>
-            <input
-              type="text"
-              placeholder="請點餐"
-              ref={counterRef} //將標記加在輸入框這東西上
-              value={orderInput} //這輸入框的內容是點單筆記本上的內容
-              onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
-              //下面是當客人按下Enter鍵就執行點餐流程
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !isLoading)
-                  //如果按下的是Enter鍵且不是正在煮飯中的話
-                  takeOrder(); //就執行點餐流程
-              }}
-            />
-            {/* 再在櫃檯增加一個點餐按鈕,如果正在煮飯就顯示餐點製作中且不能按下,正常情況下按下就送出客人的點單 */}
-            <button onClick={takeOrder} disabled={isLoading}>
-              {isLoading ? "餐點製作中..." : "下單"}
-            </button>
-          </div>
-
-          {/* 櫃檯--歷史訂單顯示區 */}
-          <div className="orderHistory-display">
-            {/* 將歷史訂單筆記本裡面的清單一筆一筆拿出來抄到上面顯示出來給客人看 */}
-            {orderHistory.map((bendo) => {
-              //用map遍歷歷史訂單筆記本裡面的每一筆訂單並且傳到bendo這個變數裡面
-              return (
-                //單字卡本身
-                <div
-                  key={bendo.id}
-                  id={`display-bendo-${bendo.id}`} //給每個便當一個獨特的id,加上display-bendo-前綴方便辨識
-                  className="bendo-card"
-                  style={{
-                    flex: 1,
-                    height: "100vh",
-                    position: "relative",
-                    border: "2px dashed #ccc",
-                    padding: "20px",
-                  }}
-                >
-                  <button
-                    onClick={() => deleteSupabaseItem(bendo.id)} // 呼叫我們寫好的刪除處理函式
-                    style={{
-                      position: "absolute", // 【關鍵】絕對定位
-                      top: "10px", // 距離上方 10 像素
-                      right: "10px", // 距離右方 10 像素
-                      background: "#ff4d4f", // 警示紅色
-                      color: "white",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      padding: "5px 10px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    🗑️ 刪除
-                  </button>
-                  <h3>
-                    單字便當：
-                    <span
-                      //讓這html元素可以被編輯
-                      contentEditable={true}
-                      //消除React對contentEditable的警告(他怕出錯會有一堆警告)
-                      suppressContentEditableWarning={true}
-                      //當失去焦點時,就將修改後的內容更新到倉庫,onBlur會傳入他自身報告到他裡面的函數的參數
-                      onBlur={(e) => {
-                        // 此時 e.target.innerText 就只會拿到你打的單字，不會有「單字便當：」
-                        updateSupabaseItem(bendo.id, {
-                          bendoName: e.target.innerText,
-                        });
-                      }}
-                    >
-                      {bendo.bendoName}
-                    </span>
-                    <button
-                      onClick={() => howToSpeech(bendo.bendoName)}
-                      style={{ marginLeft: "10px" }}
-                    >
-                      🔊
-                    </button>
-                  </h3>
-                  <ul>
-                    <li>中文意思：{bendo.chtMeaning}</li>
-                    <li>讀音：{bendo.reading}</li>
-                    <li>重音：{bendo.accent}</li>
-                    <li>
-                      日文例句：{bendo.example_ja}
-                      <button
-                        onClick={() => howToSpeech(bendo.example_ja)}
-                        style={{ marginLeft: "10px", fontSize: "12px" }}
-                      >
-                        🔊
-                      </button>
-                    </li>
-                    <li>中文例句：{bendo.example_cht}</li>
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
         {/* 傳送到櫃檯的魔法按鈕 */}
@@ -622,7 +494,7 @@ function App() {
           傳送到櫃檯
         </button>
       </div>
-    </>
+    </div>
   );
 }
 export default App;
