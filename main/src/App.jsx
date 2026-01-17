@@ -20,6 +20,9 @@ import BendoKitchen from "./components/BendoKitchen.jsx";
 //引入便當音訊組件
 import BendoAudio from "./components/BendoAudio.jsx";
 
+//引入便當書籤組件
+import BendoIndex from "./components/BendoIndex.jsx";
+
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
   const [orderInput, setOrderInput] = useState("");
@@ -149,34 +152,10 @@ function App() {
       </div>
 
       {/* --- 索引標籤區 (書籤) --- */}
-      <div
-        className="orderHistory-index"
-        style={{
-          position: "sticky",
-          width: "200px",
-          flexShrink: 0, //不讓這個區塊縮小(防止右邊東西太多時被擠扁)
-          top: "20vh",
-          maxHeight: "60vh",
-          overflowY: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: "5px",
-        }}
-      >
-        <p>歷史便當快速選單</p>
-        {orderHistory.map((bendo) => {
-          return (
-            <button
-              key={bendo.id}
-              onClick={() => scrollToBendo(bendo.id)}
-              style={{ padding: "5px", fontSize: "12px", cursor: "pointer" }}
-            >
-              {bendo.bendoName}
-              {/* 用主菜名當標籤 */}
-            </button>
-          );
-        })}
-      </div>
+      <BendoIndex 
+        orderHistory={orderHistory} 
+        scrollToBendo={scrollToBendo}
+      />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
