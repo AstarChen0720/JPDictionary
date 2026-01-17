@@ -2,8 +2,6 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 
-
-
 //引入已經準備好服務我們的supabase倉儲駐點服務人員
 import supabase from "./supabaseClient.js";
 
@@ -19,16 +17,15 @@ import BendoWarehouse from "./components/BendoWarehouse.jsx";
 //引入便當廚房組件
 import BendoKitchen from "./components/BendoKitchen.jsx";
 
+//引入便當音訊組件
+import BendoAudio from "./components/BendoAudio.jsx";
+
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
   const [orderInput, setOrderInput] = useState("");
 
   //拿一個標記來標記輸入框的位置
   const counterRef = useRef(null);
-
-
-  //拿一盒子放播音公司寄來的CD
-  const [speechAudioBox, setSpeechAudioBox] = useState({});
 
   //引入倉庫管理組件那裡將所有可以拿的功能和資料都拿出來使用
   //{}是簡寫，代表拿出BendoWarehouse()這函數傳回的對應名稱的東西
@@ -44,7 +41,6 @@ function App() {
 
   //拿出便當廚房組件的所有資料和功能來使用
   const { isCooking, cookingSOP } = BendoKitchen();
-
 
   //點餐SOP(新):當客人按下"送出訂單"按鈕後,
   // 依照當前點單筆記本的內容,跟廚房區說我要什麼便當
@@ -90,72 +86,9 @@ function App() {
     }
   };
 
-  //念讀音SOP:當客人問如何念時,先檢查現在的CD盒內有沒有對應的CD有就直接拿來播,沒有的話就將客人想問的字寄到播音公司,然後將播音公司寄回的CD放到播放器中播給客人聽,再將CD放到CD盒內以備下次使用
-  //howToSpeechText是客人想問的字(看下面button的onClick)
-  const howToSpeech = async (howToSpeechText) => {
-    //先檢查CD盒內有沒有對應的CD,有得話直接拿來播
-    if (speechAudioBox[howToSpeechText]) {
-      //讓店員大喊正在做什麼來掌握現在執行進度(測試用)
-      console.log("正在播放現成的CD");
-      //設定好播放器的模式(可能是CD模式,可能是錄音帶模式...)
-      const speechAudioSrc = `data:audio/mp3;base64,${speechAudioBox[howToSpeechText]}`; //${...}代表要放入的CD
-      //將CD放入播放器
-      const speechAudio = new Audio(speechAudioSrc);
-      //按開始播放
-      speechAudio.play();
-      return; //結束這個念讀音SOP,不要再去跟播音公司買CD
-    }
-    //沒有現成的CD故要去跟播音公司買
-    try {
-      console.log("沒有現成CD，準備寄信給播音公司...");
-      //要給播音公司的包裹(委託書)
-      const speechOrder = {
-        audioConfig: {
-          audioEncoding: "MP3", //編碼格式(要寄回的是錄音帶還是CD...)
-          pitch: 0, //音調高低
-          speakingRate: 1, //說話速度
-        },
-        input: { text: howToSpeechText }, //要念的內容
-        voice: {
-          //聲音設定
-          languageCode: "ja-JP",
-          name: "ja-JP-Chirp3-HD-Autonoe",
-        },
-      };
-
-      //放入會員資訊並寄給播音公司
-      const SPEECH_API_KEY = import.meta.env.VITE_SPEECH_API_KEY; //從皮夾拿會員編號
-      const response = await fetch(
-        //fetch是郵差他會將包裹寄去再送回對方的回擲,他需要地址和包裹,fetch(地址,包裹(有一堆選項))
-        //地址
-        `https://texttospeech.googleapis.com/v1beta1/text:synthesize?key=${SPEECH_API_KEY}`,
-        //包裹
-        {
-          method: "POST", //投遞目的(ex訂購,退貨...)
-          headers: { "Content-Type": "application/json" }, //說明標籤(ex:內含易碎物品)
-          body: JSON.stringify(speechOrder), //包裹本身,且將包裹本身裝成易於運送的盒子(郵包)寄出
-        }
-      );
-
-      const speechCD = await response.json(); //取出播音公司寄回的包裹內容(CD)並拆開盒子取出,.json()代表抓body的內容並轉成JSON格式
-      //如果有收到CD有內容的話
-      if (speechCD.audioContent) {
-        //設定好播放器的模式(可能是CD模式,可能是錄音帶模式...)
-        const speechAudioSrc = `data:audio/mp3;base64,${speechCD.audioContent}`;
-        //將CD放入播放器
-        const speechAudio = new Audio(speechAudioSrc);
-        //按開始播放
-        speechAudio.play();
-        //將CD放到CD盒內
-        setSpeechAudioBox({
-          ...speechAudioBox, //展開舊物件
-          [howToSpeechText]: speechCD.audioContent, //用客人想問的字當作key來放CD
-        });
-      }
-    } catch (error) {
-      console.error("念讀音SOP錯誤回報", error);
-    }
-  };
+  //念讀音SOP:當客人問如何念時,將想念的字傳給howToSpeech去處理
+  //拿出便當音訊組件的所有資料和功能來使用(拿出howToSpeech這個念讀音的功能)
+  const { howToSpeech } = BendoAudio();
 
   //傳送到櫃檯的魔法:客人喊出指令後(按按鈕或喊指令),就會瞬間被傳送到櫃檯前面(輸入框被focus)
   const teleportToCounter = () => {
