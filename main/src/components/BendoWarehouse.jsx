@@ -343,73 +343,76 @@ function BendoWarehouse() {
   //沒登入,就讀取本地資料,沒有本地資料就給空陣列
   useEffect(() => {
     const syncData = async () => {
-    
-    if (session) {
-      // 如果現在這個人的 ID 跟我剛剛同步過的人一樣，就直接跳過
-      if (syncedUserId.current === session.user.id) {
-        console.log("偵測到此會員剛剛已有完成同步，略過本次同步");
-        return;
-      }
-
-      //紀錄下這人的ID,代表他已經同步過了
-      syncedUserId.current = session.user.id;
-      console.log("偵測到會員已登入，正在檢查是否有本地資料要同步...");
-      //檢查本地有沒有資料
-      const localBendo = getLocalData();
-      //先刪,如果失敗再放回去,這樣本地資料刪除就不用等要上傳完
-      //避免如果有人網速很慢,快入登出再登入會重複上傳
-      localStorage.removeItem(LOCAL_STORAGE_KEY);
-
-      if (localBendo.length > 0) {
-        console.log(`發現有${localBendo.length}筆本地資料，正在同步到倉庫...`);
-        //有資料就上傳到supabase,並抓他有沒有錯誤
-        //要直接整理資料後呼叫supabase上傳,因為addToSupabase無法傳多筆資料
-        //整理好要上傳的資料陣列
-        const readyToUpload = localBendo.map((bendo) => ({
-          bendoName: bendo.bendoName,
-          chtMeaning: bendo.chtMeaning,
-          reading: bendo.reading,
-          accent: bendo.accent,
-          example_ja: bendo.example_ja,
-          example_cht: bendo.example_cht,
-          user_id: session.user.id,
-        }));
-        //直接呼叫supabase上傳,並抓他有沒有錯誤
-        const { error } = await supabase
-          .from("bendoOrderHistory")
-          .insert(readyToUpload);
-
-        //上傳成功
-        if (!error) {
-          console.log("本地資料上傳到倉庫成功，正在清除本地資料...");
+      if (session) {
+        // 如果現在這個人的 ID 跟我剛剛同步過的人一樣，就直接跳過
+        if (syncedUserId.current === session.user.id) {
+          console.log("偵測到此會員剛剛已有完成同步，略過本次同步");
+          return;
         }
-        //失敗就印出錯誤內容並不要放回本地資料(寧願資料消失也不要重複上傳)
-        if (error) {
-          console.error("本地資料上傳到倉庫時發生錯誤:", error);
-          setLocalData(localBendo); //放回本地資
+
+        //紀錄下這人的ID,代表他已經同步過了
+        syncedUserId.current = session.user.id;
+        console.log("偵測到會員已登入，正在檢查是否有本地資料要同步...");
+        //檢查本地有沒有資料
+        const localBendo = getLocalData();
+        //先刪,如果失敗再放回去,這樣本地資料刪除就不用等要上傳完
+        //避免如果有人網速很慢,快入登出再登入會重複上傳
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+
+        if (localBendo.length > 0) {
+          console.log(
+            `發現有${localBendo.length}筆本地資料，正在同步到倉庫...`,
+          );
+          //有資料就上傳到supabase,並抓他有沒有錯誤
+          //要直接整理資料後呼叫supabase上傳,因為addToSupabase無法傳多筆資料
+          //整理好要上傳的資料陣列
+          const readyToUpload = localBendo.map((bendo) => ({
+            bendoName: bendo.bendoName,
+            chtMeaning: bendo.chtMeaning,
+            reading: bendo.reading,
+            accent: bendo.accent,
+            example_ja: bendo.example_ja,
+            example_cht: bendo.example_cht,
+            user_id: session.user.id,
+          }));
+          //直接呼叫supabase上傳,並抓他有沒有錯誤
+          const { error } = await supabase
+            .from("bendoOrderHistory")
+            .insert(readyToUpload);
+
+          //上傳成功
+          if (!error) {
+            console.log("本地資料上傳到倉庫成功，正在清除本地資料...");
+          }
+          //失敗就印出錯誤內容並放回本地資料
+          if (error) {
+            console.error("本地資料上傳到倉庫時發生錯誤:", error);
+            setLocalData(localBendo); //放回本地資料
+          }
         }
+        //不管有沒有本地資料,最後都去抓supabase最新資料
+        console.log("正在從倉庫下載最新資料...");
+        const supabaseBendo = await fetchFromSupabase();
+        //如果有資料就更新筆記本
+        if (supabaseBendo) {
+          setOrderHistory(supabaseBendo);
+        }
+      } else {
+        //沒登入(或登出)就重設同步過的狀態(這樣才不會同一人再登入無法同步)
+        syncedUserId.current = null;
+        // 如果沒通行證(沒登入)就先嘗試讀取本地儲物箱的資料
+        console.log("偵測到會員沒有登入，嘗試同步本地資料...");
+        //直接將本地資料抄到筆記本上
+        const localBendo = getLocalData();
+        //因為程式會從左到右執行,如果localBendo有東西就用localBendo,沒有東西(null)就用空陣列
+        setOrderHistory(localBendo || []);
+        console.log("本地資料同步完成");
       }
-      //不管有沒有本地資料,最後都去抓supabase最新資料
-      console.log("正在從倉庫下載最新資料...");
-      const supabaseBendo = await fetchFromSupabase();
-      //如果有資料就更新筆記本
-      if (supabaseBendo) {
-        setOrderHistory(supabaseBendo);
-      }
-    } else {
-      //沒登入(或登出)就重設同步過的狀態(這樣才不會同一人再登入無法同步)
-      syncedUserId.current = null;
-      // 如果沒通行證(沒登入)就先嘗試讀取本地儲物箱的資料
-      console.log("偵測到會員沒有登入，嘗試同步本地資料...");
-      //直接將本地資料抄到筆記本上
-      const localBendo = getLocalData();
-      //因為程式會從左到右執行,如果localBendo有東西就用localBendo,沒有東西(null)就用空陣列
-      setOrderHistory(localBendo || []);
-      console.log("本地資料同步完成");
-    }
     };
     syncData();
-  }, [session]); //每當session有變化時就重新執行一次,就等同是監視session有沒有變化,有變化就執行一次
+  }, [session?.user?.id]); //每當session內的用戶id有變化時才重新執行一次,因為如果看整個session的話太敏感,切畫面再切回都會讓session整體有變化,這樣會一直同步,
+  //執行的太快就會重複上傳資料,現在這樣只要用戶id有變化時才重執行,就不會有這個問題了
+  //警告不要理他
 
   //筆記本:把資料或函式return出去讓外面可以用（代表我可以讓外面用的部分）
   return {
