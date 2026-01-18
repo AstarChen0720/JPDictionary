@@ -4,7 +4,7 @@
 import supabase from "../supabaseClient.js";
 
 //後面機構的部分(齒輪盒)
-function LoginWall() {
+function LoginWall({ setIsLogin }) {
   //登入的魔法:將要登入的人的email和password傳給supabase讓他幫我登入
   const handleLogin = async (email, password) => {
     //{error}是簡寫法,意思是等號右邊的回傳值中的error取出來把他叫做error變數
@@ -63,6 +63,15 @@ function LoginWall() {
           }}
         >
           註冊新會員
+        </button>
+
+        {/* ★ 新增：訪客模式按鈕 */}
+        {/* 按下這個按鈕，isLogin 變成 true，外面的 if (!isLogin) 就會失效，牆就會消失 */}
+        <button
+          onClick={() => setIsLogin(true)}
+          style={{ backgroundColor: "#888", color: "white" }}
+        >
+          用訪客模式繼續
         </button>
       </div>
     </div>

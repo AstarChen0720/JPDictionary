@@ -14,6 +14,7 @@ const genAI = new GoogleGenerativeAI(AI_API_KEY);
 function BendoKitchen() {
   //拿一本筆記本來紀錄廚房目前是否正在煮飯中
   const [isCooking, setIsCooking] = useState(false);
+
   //做菜SOP:將傳進來的客人的點單內容,叫gemini煮完再裝好後送回
   const cookingSOP = async (orderInput) => {
     //檢查如果有點餐內容才製作東西  

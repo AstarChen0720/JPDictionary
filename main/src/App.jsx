@@ -1,4 +1,4 @@
-// useState就是一本筆記本用來紀錄東西,而useRef就是用來定位的,他就是一個標記,用來標記你想要標的東西位置或狀態,他會將他標的東西的所有資訊都存在他的裡面叫current的盒子,useEffect就是一份合約,他會讓員工在你訂好的時間下去做某件工作
+// useState就是一本筆記本用來紀錄東西,而useRef就是用來定位的,他就是一個標記,用來標記你想要標的東西位置或狀態,他會將他標的東西的所有資訊都存在他的裡面叫current的盒子,盒子內的東西改變不會影響渲染,useEffect就是一份合約,他會讓員工在你訂好的時間下去做某件工作
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 
@@ -30,16 +30,18 @@ function App() {
   //拿一個標記來標記輸入框的位置
   const counterRef = useRef(null);
 
+  //拿一個筆記本來紀錄登入狀態
+  const [isLogin, setIsLogin] = useState(null);
+
   //引入倉庫管理組件那裡將所有可以拿的功能和資料都拿出來使用
   //{}是簡寫，代表拿出BendoWarehouse()這函數傳回的對應名稱的東西
   const {
     session, //沒有setSession是因為這個通行證的變化想要就全權交給BendoWarehouse去處理就好,其他地方不要去改他
     orderHistory,
     setOrderHistory,
-    addToSupabase,
-    fetchFromSupabase,
-    deleteSupabaseItem,
-    updateSupabaseItem,
+    addBendo,
+    deleteBendo,
+    updateBendo,
   } = BendoWarehouse();
 
   //拿出便當廚房組件的所有資料和功能來使用
@@ -49,6 +51,7 @@ function App() {
   // 依照當前點單筆記本的內容,跟廚房區說我要什麼便當
   // 等廚房區把便當做好送回來後,
   // 將便當抄到歷史訂單筆記本,再把點單筆記本的這頁撕掉丟垃圾桶
+  // 最後執行向倉庫增加東西的SOP將便當存到倉庫
   const takeOrder = async () => {
     //async如果有等的步驟,就先去做別的事
     //檢查如果點單不是空的再去做便當
@@ -62,29 +65,9 @@ function App() {
         setOrderHistory((prev) => [newBendo, ...prev]);
         //把點單筆記本的這頁撕掉,這樣下個客人的點餐才不會混在一起
         setOrderInput("");
-        //執行向倉庫增加東西的SOP並寄回正在倉庫內放的東西(包含倉庫貨品id)
-        const bendoInSupabase = await addToSupabase(newBendo);
-        //如果有成功放到倉庫的話(有寄回在貨架上的東西)
-        if (bendoInSupabase) {
-          //將倉庫貨品id取代筆記本上對應的便當id
-          setOrderHistory((prev) => {
-            //map會遍歷每一資料後,蒐集回傳的資料組成一個新的陣列回傳出去
-            return prev.map((oldBendo) => {
-              //如果當前掃到的便當是剛剛做出來的那個
-              if (oldBendo.id === newBendo.id) {
-                console.log(`便當成功存入倉庫！新ID是: ${bendoInSupabase.id}`);
-                //將倉庫貨品id取代掉現在便當上的臨時id(把newBendo的id改成supabese上的id),並回傳
-                //將bendo物件展開後舊id改成新id
-                return { ...oldBendo, id: bendoInSupabase.id };
-                //如不是就回傳原本的便當物件
-              } else {
-                return oldBendo;
-              }
-            });
-          });
-        } else {
-          console.error("便當未能成功存入倉庫");
-        }
+        //執行向倉庫增加東西的SOP
+        addBendo(newBendo);
+
       }
     }
   };
@@ -134,8 +117,8 @@ function App() {
 
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
   //如果沒有通行證(沒登入)就顯示登入牆,有通行證(有登入)就顯示便當店內部
-  if (!session) {
-    return <LoginWall />;
+  if (!isLogin && !session) {
+    return <LoginWall setIsLogin={setIsLogin} />;
   }
 
   return (
@@ -143,12 +126,22 @@ function App() {
       className="BendoShop"
       style={{ display: "flex", gap: "20px", padding: "20px" }}
     >
-      {/* 在角落加一個登出按鈕 */}
-      <div
-        style={{ position: "fixed", top: "10px", left: "10px", zIndex: 1000 }}
-      >
-        <span>你好, {session.user.email} </span>
-        <button onClick={handleLogout}>登出</button>
+      {/* 會員資訊 */}
+      <div style={{ position: "fixed", top: "10px", left: "10px", zIndex: 1000, background: "white", padding: "5px" }}>
+        {session ? (
+            <>
+                <span>會員: {session.user.email} </span>
+                <button onClick={handleLogout}>登出</button>
+            </>
+        ) : (
+            // 沒登入時顯示這個
+          <>
+            <span>現在是訪客模式(無法同步資料)</span>
+            <button onClick={() => setIsLogin(false)}>
+                登入 / 註冊
+            </button>
+          </>
+        )}
       </div>
 
       {/* --- 索引標籤區 (書籤) --- */}
@@ -186,8 +179,8 @@ function App() {
               <BendoCard
                 bendo={bendo}
                 howToSpeech={howToSpeech}
-                deleteSupabaseItem={deleteSupabaseItem}
-                updateSupabaseItem={updateSupabaseItem}
+                deleteSupabaseItem={deleteBendo}
+                updateSupabaseItem={updateBendo}
               />
             );
           })}
