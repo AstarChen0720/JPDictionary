@@ -25,22 +25,40 @@ function LoginWall({ setIsLogin }) {
 
   //顯示出來的部分(錶面)
   return (
+    //背景灰色
     <div
       className="Login-Wall"
-      style={{ padding: "50px", textAlign: "center" }}
-    >
-      <h1>歡迎來到單字便當店 LV5</h1>
-      <p>請先出示會員證（登入）以開始點餐</p>
-
+      style={{
+        position: "fixed", // 讓它蓋在最上面
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        backgroundColor: "rgba(0, 0, 0, 0.6)", // 半透明黑色背景，這就是懸浮感的來源
+        display: "flex", // 使用 flex 讓內容居中
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 9999, // 確保在最上層
+      }}
+    > 
+      {/*前景:中間白色登入部分*/}
       <div
         style={{
-          maxWidth: "300px",
-          margin: "0 auto",
+          backgroundColor: "white", // 給內容一個白底，才不會被後面的遮罩透過去
+          padding: "40px",
+          borderRadius: "15px", // 圓角感
+          boxShadow: "0 8px 30px rgba(0,0,0,0.3)", // 加入陰影，讓它真的「浮」起來
+          maxWidth: "500px",
+          width: "90%", // 在小螢幕時自動縮小
           display: "flex",
           flexDirection: "column",
-          gap: "10px",
+          gap: "15px",
+          textAlign: "center",
         }}
       >
+        <h1>歡迎來到單字便當店</h1>
+        <p><b>請問您要登入還是註冊？</b></p>
+
         {/* 這裡簡單做，實際可以用 form */}
         <input id="email" type="email" placeholder="Email" />
         <input id="password" type="password" placeholder="Password" />
@@ -71,7 +89,7 @@ function LoginWall({ setIsLogin }) {
           onClick={() => setIsLogin(true)}
           style={{ backgroundColor: "#888", color: "white" }}
         >
-          用訪客模式繼續
+          返回繼續使用訪客模式
         </button>
       </div>
     </div>

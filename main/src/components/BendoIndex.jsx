@@ -21,6 +21,7 @@ function BendoIndex({
         flexDirection: "column",
         minHeight: "100vh",
         gap: "5px",
+        zIndex: 1001,
       }}
     >
       {/* 會員資訊 */}
@@ -48,7 +49,7 @@ function BendoIndex({
           </>
         )}
       </div>
-      <p>歷史便當快速選單</p>
+      <p style={{alignSelf: "center"}}>歷史便當快速選單</p>
       {orderHistory.map((bendo) => {
         return (
           <button

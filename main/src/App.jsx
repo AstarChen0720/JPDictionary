@@ -31,7 +31,10 @@ function App() {
   const counterRef = useRef(null);
 
   //拿一個筆記本來紀錄登入狀態
-  const [isLogin, setIsLogin] = useState(null);
+  const [isLogin, setIsLogin] = useState(true);//預設為true讓他一開始就是訪客模式,直到你點登入或註冊按鈕才會顯示登入牆
+
+  //拿一個筆記本來紀錄現在要不要顯示懸浮櫃檯
+  //const [showSticky, setShowSticky] = useState(false);
 
   //引入倉庫管理組件那裡將所有可以拿的功能和資料都拿出來使用
   //{}是簡寫，代表拿出BendoWarehouse()這函數傳回的對應名稱的東西
@@ -67,6 +70,13 @@ function App() {
         setOrderInput("");
         //執行向倉庫增加東西的SOP
         addBendo(newBendo);
+        
+        //將視角跳到剛剛新增的便當那裡
+        //因為setState不會馬上更新,所以等他一下(100毫秒)再施展魔法
+        setTimeout(() => {
+          //翻到指定便當頁數的魔法
+          scrollToBendo(newBendo.id);
+        }, 100);
 
       }
     }
@@ -115,6 +125,31 @@ function App() {
     };
   }, []); //空陣列代表這個合約只會這間店每次重新卸載再重建(掛載)時執行一次
 
+  // //監視櫃檯位置的任務
+  // //聘請一位監視者,監視櫃檯完全離開或一進入次線範圍就回報
+  // useEffect(() => {
+  //   //聘請監視者,這位監視者只會在他監視的東西進入或離開是線時觸發(執行他的第一個值內的函式)
+  //   //IntersectionObserver(如果事情發生了要做的工作, 監視的條件(像是要離開多少才算離開視線範圍...))
+  //   const counterObserver = new IntersectionObserver(
+  //     //解構賦值,接收IntersectionObserver自動用陣列傳入第一個參數的目標狀態陣列(只有一個目標所以陣列內只有一個東西)
+  //     //[name]取出陣列第一個東西並命名為name
+  //     ([entry]) => {
+  //       //如果櫃檯不在視線範圍內的話就顯示懸浮櫃檯(setShowSticky(true))
+  //       //entry.isIntersecting,如果被監視的東西有在視線範圍內的話是true,不在是false
+  //       setShowSticky(!entry.isIntersecting);
+  //     },
+  //     //被監視剛進入或完全離開視線範圍才觸發
+  //     { threshold: 0 },
+  //   );
+  //   //如果輸入框有被標記(有正常顯示)
+  //   if (counterRef.current) {
+  //     //監視被標記的輸入框這個東西(櫃檯),用Ref.currnt來看盒子狀態
+  //     counterObserver.observe(counterRef.current);
+  //   }
+  //   //留紙條跟工頭說關店時記得要叫他收工,return必須是一個函式
+  //   return () => counterObserver.disconnect();
+  // }, []);
+
   //剛剛那是內部跟員工講的規定,現在是涉及到外部硬體設施的部分
   //如果沒有通行證(沒登入)就顯示登入牆,有通行證(有登入)就顯示便當店內部
   if (!isLogin && !session) {
@@ -126,7 +161,40 @@ function App() {
       className="BendoShop"
       style={{ display: "flex", gap: "20px", padding: "20px" }}
     >
-
+      {/* 懸浮櫃檯區 因為會擋到單字先關掉*/}
+      {/* 本來想寫if但是jsx中的js不能寫if,故改用&&,因為程式是由左向右執行的所以showSticky為true時才會顯示這個懸浮櫃檯 */}
+      {/* {showSticky && (
+        <div
+          className="StickyBar"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: "#fff",
+            borderBottom: "2px solid #ccc",
+            padding: "10px 20px",
+            zIndex: 1000,
+            display: "flex",
+            justifyContent: "center",
+            gap: "10px",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+          }}
+        >
+          <input
+            type="text"
+            placeholder="在懸浮櫃檯點餐..."
+            value={orderInput}
+            onChange={(e) => setOrderInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !isCooking) takeOrder();
+            }}
+          />
+          <button onClick={takeOrder} disabled={isCooking}>
+            {isCooking ? "煮飯中..." : "下單"}
+          </button>
+        </div>
+      )} */}
       {/* --- 會員資訊索和引標籤區 (書籤) --- */}
       <BendoIndex
         orderHistory={orderHistory}
@@ -135,7 +203,6 @@ function App() {
         handleLogout={handleLogout}
         setIsLogin={setIsLogin}
       />
-
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
         <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
