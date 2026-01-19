@@ -43,17 +43,17 @@ function BendoCard({bendo,deleteSupabaseItem,updateSupabaseItem,howToSpeech}) {
       <h3>
         單字便當：
         <span
-          //讓這html元素可以被編輯
-          contentEditable={true}
-          //消除React對contentEditable的警告(他怕出錯會有一堆警告)
-          suppressContentEditableWarning={true}
-          //當失去焦點時,就將修改後的內容更新到倉庫,onBlur會傳入他自身報告到他裡面的函數的參數
-          onBlur={(e) => {
-            // 此時 e.target.innerText 就只會拿到你打的單字，不會有「單字便當：」
-            updateSupabaseItem(bendo.id, {
-              bendoName: e.target.innerText,
-            });
-          }}
+          // //讓這html元素可以被編輯
+          // contentEditable={true}
+          // //消除React對contentEditable的警告(他怕出錯會有一堆警告)
+          // suppressContentEditableWarning={true}
+          // //當失去焦點時,就將修改後的內容更新到倉庫,onBlur會傳入他自身報告到他裡面的函數的參數
+          // onBlur={(e) => {
+          //   // 此時 e.target.innerText 就只會拿到你打的單字，不會有「單字便當：」
+          //   updateSupabaseItem(bendo.id, {
+          //     bendoName: e.target.innerText,
+          //   });
+          // }}
         >
           {bendo.bendoName}
         </span>
