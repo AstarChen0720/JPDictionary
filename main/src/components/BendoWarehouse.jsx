@@ -340,7 +340,7 @@ function BendoWarehouse() {
 
   //任務C同步資料任務:如果通行證內容有變化,就檢查有沒有登入,
   //有登入,先檢查本地資料,有就先上傳後下載最新資料,沒有就直接下載最新資料
-  //沒登入,就讀取本地資料,沒有本地資料就給空陣列
+  //沒登入,直接清空本地資料和筆記本資料
   useEffect(() => {
     const syncData = async () => {
       if (session) {
@@ -398,15 +398,13 @@ function BendoWarehouse() {
           setOrderHistory(supabaseBendo);
         }
       } else {
-        //沒登入(或登出)就重設同步過的狀態(這樣才不會同一人再登入無法同步)
+        //沒登入(或登出)就重設同步過的狀態(這樣才不會同一人再登入無法同步),且清空資料
         syncedUserId.current = null;
-        // 如果沒通行證(沒登入)就先嘗試讀取本地儲物箱的資料
-        console.log("偵測到會員沒有登入，嘗試同步本地資料...");
-        //直接將本地資料抄到筆記本上
-        const localBendo = getLocalData();
-        //因為程式會從左到右執行,如果localBendo有東西就用localBendo,沒有東西(null)就用空陣列
-        setOrderHistory(localBendo || []);
-        console.log("本地資料同步完成");
+        //刪除本地資料
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        //清空筆記本資料
+        setOrderHistory([]);  
+        console.log("沒有登入，清空歷史訂單...");
       }
     };
     syncData();

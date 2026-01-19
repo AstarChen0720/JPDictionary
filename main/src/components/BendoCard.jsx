@@ -18,10 +18,11 @@ function BendoCard({bendo,deleteSupabaseItem,howToSpeech}) {
       className="bendo-card"
       style={{
         flex: 1,
-        height: "100vh",
+        height: "80vh",
         position: "relative",
         border: "2px dashed #ccc",
         padding: "20px",
+        margin: "10px 0px",
       }}
     >
       <button

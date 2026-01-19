@@ -202,6 +202,8 @@ function App() {
         session={session}
         handleLogout={handleLogout}
         setIsLogin={setIsLogin}
+        deleteBendo={deleteBendo}
+        setOrderHistory={setOrderHistory}
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
