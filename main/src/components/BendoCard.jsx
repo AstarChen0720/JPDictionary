@@ -12,76 +12,60 @@
 function BendoCard({bendo,deleteSupabaseItem,howToSpeech}) {
     
     return (
-    <div
-      key={bendo.id}
-      id={`display-bendo-${bendo.id}`} //給每個便當一個獨特的id,加上display-bendo-前綴方便辨識
-      className="bendo-card"
-      style={{
-        flex: 1,
-        height: "80vh",
-        position: "relative",
-        border: "2px dashed #ccc",
-        padding: "20px",
-        margin: "10px 0px",
-      }}
-    >
-      <button
-        onClick={() => deleteSupabaseItem(bendo.id)} // 呼叫我們寫好的刪除處理函式
+      <div
+        key={bendo.id}
+        id={`display-bendo-${bendo.id}`} //給每個便當一個獨特的id,加上display-bendo-前綴方便辨識
+        className="bendo-card"
         style={{
-          position: "absolute", // 【關鍵】絕對定位
-          top: "10px", // 距離上方 10 像素
-          right: "10px", // 距離右方 10 像素
-          background: "#ff4d4f", // 警示紅色
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          cursor: "pointer",
-          padding: "5px 10px",
-          fontSize: "14px",
+          flex: 1,
+          height: "80vh",
+          position: "relative",
+          border: "2px dashed #ccc",
+          padding: "20px",
+          margin: "10px 0px",
         }}
       >
-        🗑️ 刪除
-      </button>
-      <h3>
-        單字便當：
-        <span
-          // //讓這html元素可以被編輯
-          // contentEditable={true}
-          // //消除React對contentEditable的警告(他怕出錯會有一堆警告)
-          // suppressContentEditableWarning={true}
-          // //當失去焦點時,就將修改後的內容更新到倉庫,onBlur會傳入他自身報告到他裡面的函數的參數
-          // onBlur={(e) => {
-          //   // 此時 e.target.innerText 就只會拿到你打的單字，不會有「單字便當：」
-          //   updateSupabaseItem(bendo.id, {
-          //     bendoName: e.target.innerText,
-          //   });
-          // }}
-        >
-          {bendo.bendoName}
-        </span>
         <button
-          onClick={() => howToSpeech(bendo.bendoName)}
-          style={{ marginLeft: "10px" }}
+          onClick={() => deleteSupabaseItem(bendo.id)} // 呼叫我們寫好的刪除處理函式
+          style={{
+            position: "absolute", // 【關鍵】絕對定位
+            top: "10px", // 距離上方 10 像素
+            right: "10px", // 距離右方 10 像素
+            background: "#ff4d4f", // 警示紅色
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            cursor: "pointer",
+            padding: "5px 10px",
+            fontSize: "14px",
+          }}
         >
-          🔊
+          🗑️ 刪除
         </button>
-      </h3>
-      <ul>
-        <li>中文意思：{bendo.chtMeaning}</li>
-        <li>讀音：{bendo.reading}</li>
-        <li>重音：{bendo.accent}</li>
-        <li>
-          日文例句：{bendo.example_ja}
-          <button
-            onClick={() => howToSpeech(bendo.example_ja)}
-            style={{ marginLeft: "10px", fontSize: "12px" }}
+        <div
+          onClick={() => howToSpeech(bendo.bendoName)}
+          style={{
+            fontWeight: "bold",
+            cursor: "pointer",
+            border: "2px dashed #ccc",
+          }}
+        >
+          單字便當：
+          <span>{bendo.bendoName}</span>
+        </div>
+        <ul>
+          <li>中文意思：{bendo.chtMeaning}</li>
+          <li>讀音：{bendo.reading}</li>
+          <li>重音：{bendo.accent}</li>
+          <li 
+          onClick={() => howToSpeech(bendo.example_ja)}
+          style={{ cursor: "pointer", border: "2px dashed #ccc" }}
           >
-            🔊
-          </button>
-        </li>
-        <li>中文例句：{bendo.example_cht}</li>
-      </ul>
-    </div>
+            日文例句：{bendo.example_ja}
+          </li>
+          <li>中文例句：{bendo.example_cht}</li>
+        </ul>
+      </div>
     );
 }
 
