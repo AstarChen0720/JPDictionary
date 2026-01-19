@@ -126,28 +126,14 @@ function App() {
       className="BendoShop"
       style={{ display: "flex", gap: "20px", padding: "20px" }}
     >
-      {/* 會員資訊 */}
-      <div style={{ position: "fixed", top: "10px", left: "10px", zIndex: 1000, background: "white", padding: "5px" }}>
-        {session ? (
-            <>
-                <span>會員: {session.user.email} </span>
-                <button onClick={handleLogout}>登出</button>
-            </>
-        ) : (
-            // 沒登入時顯示這個
-          <>
-            <span>現在是訪客模式(無法同步資料)</span>
-            <button onClick={() => setIsLogin(false)}>
-                登入 / 註冊
-            </button>
-          </>
-        )}
-      </div>
 
-      {/* --- 索引標籤區 (書籤) --- */}
-      <BendoIndex 
-        orderHistory={orderHistory} 
+      {/* --- 會員資訊索和引標籤區 (書籤) --- */}
+      <BendoIndex
+        orderHistory={orderHistory}
         scrollToBendo={scrollToBendo}
+        session={session}
+        handleLogout={handleLogout}
+        setIsLogin={setIsLogin}
       />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -186,9 +172,10 @@ function App() {
           })}
         </div>
 
-        {/* 傳送到櫃檯的魔法按鈕 */}
+        {/* 傳送到最上的魔法按鈕 */}
         <button
-          onClick={teleportToCounter}
+          //top 0 代表滾到最上面(X軸0點)
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           style={{
             position: "fixed",
             bottom: "20px",
@@ -196,7 +183,7 @@ function App() {
             padding: "10px",
           }}
         >
-          傳送到櫃檯
+          回到最上
         </button>
       </div>
     </div>

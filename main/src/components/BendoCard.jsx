@@ -8,7 +8,8 @@
 // deleteSupabaseItem:刪除便當的功能
 // updateSupabaseItem:更新便當的功能
 // howToSpeech:唸出來的功能
-function BendoCard({bendo,deleteSupabaseItem,updateSupabaseItem,howToSpeech}) {
+//先拿掉updateSupabaseItem這參數,因為目前不需要編輯便當名稱功能
+function BendoCard({bendo,deleteSupabaseItem,howToSpeech}) {
     
     return (
     <div
