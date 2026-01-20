@@ -56,13 +56,43 @@ function BendoCard({bendo,deleteSupabaseItem,howToSpeech}) {
           {/* 左邊：單字 */}
           <div
             style={{
-              fontSize: "2rem", // 字放大
+              fontSize: "2.5rem", // 字放大
               fontWeight: "bold",
-
-              lineHeight: "1", // 避免行高影響對齊
+              lineHeight: "1.5", // 避免行高影響對齊
+              marginRight: "5px",
             }}
           >
-            {bendo.bendoName}
+            {/* 如果有標好假名的單字就精確顯示,沒有就顯示一般排版的假名 */}
+            {bendo.wordMapping ? (
+              bendo.wordMapping.map((item, index) => (
+                <ruby key={index} style={{ rubyPosition: "over" }}>
+                  {item.text}
+                  <rt
+                    style={{
+                      fontSize: "0.4em",
+                      fontWeight: "normal",
+                      lineHeight: "1",
+                    }}
+                  >
+                    {item.reading}
+                  </rt>
+                </ruby>
+              ))
+            ) : (
+              // 舊資料的保底顯示
+              <ruby style={{ rubyPosition: "over" }}>
+                {bendo.bendoName}
+                <rt
+                  style={{
+                    fontSize: "0.4em",
+                    fontWeight: "normal",
+                    lineHeight: "1",
+                  }}
+                >
+                  {bendo.reading}
+                </rt>
+              </ruby>
+            )}
           </div>
 
           {/* 右邊：假名與重音標記 */}
@@ -120,6 +150,15 @@ function BendoCard({bendo,deleteSupabaseItem,howToSpeech}) {
               </span>
             </div>
           )}
+          {/* 最右邊詞性 */}
+          <div
+            style={{
+              marginLeft: "10px",
+              fontSize: "1rem",
+            }}
+          >
+            {bendo.partOfSpeech}
+          </div>
         </div>
         <ul>
           <li>中文意思：{bendo.chtMeaning}</li>

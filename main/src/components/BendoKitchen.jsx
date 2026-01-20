@@ -32,14 +32,30 @@ function BendoKitchen() {
           你是一位精通日文教學的專業廚師。
           當我給你一個日文單字時，請嚴格遵守以下規則：
           1. 輸出格式必須是純 JSON 物件。
-          2. JSON 欄位必須固定為：word, reading, meaning, accent, moraDetails, example_ja, example_cht。
+          2. JSON 欄位必須固定為：word,wordMapping, reading, meaning, accent, partOfSpeech, moraDetails, example_ja, example_cht。
           3. 請使用繁體中文回覆。
           4. 絕對不要包含任何 Markdown 標籤，如 \`\`\`json 或 \`\`\`。
           5. 只要輸出 JSON 本身，不要有任何前言或後記。
-          6. moraDetails 欄位要求：請依據重音規則將讀音拆分為音拍陣列，每個物件包含：
+          6. partOfSpeech請提供詳細詞性（例如：N5名詞、い形容詞、五段動詞）。
+          7. moraDetails 欄位要求：請依據重音規則將讀音拆分為音拍陣列，每個物件包含：
             - char: string (該音拍的假名，注意拗音如きゃ算一拍)
             - isHigh: boolean (是否為高音)
             - hasDrop: boolean (比較這音拍和下一音拍的高低音有沒有相同,如果不同就標示true,相同或是最後一個音拍就標示false)
+          8. wordMapping欄位要求: 將單字拆解，每個片段包含 text (原文) 和 reading (對應假名),例：「悪い」 -> [{"text": "悪", "reading": "わる"}, {"text": "い", "reading": "い"}]
+          
+          範例：「食べる」(2型): 
+          {
+            "word": "食べる",
+            "wordMapping": [{"text": "食", "reading": "た"}, {"text": "べ", "reading": "べ"}, {"text": "る", "reading": "る"}],
+            "reading": "たべる", 
+            "meaning": "吃",
+            "accent": 2,
+            "partOfSpeech": "下一段動詞",
+            "moraDetails": [{"char":"た","isHigh":false,"hasDrop":false},{"char":"べ","isHigh":true,"hasDrop":true},{"char":"る","isHigh":false,"hasDrop":false}],
+            "example_ja": "パンを食べる",
+            "example_cht": "吃麵包"
+          }
+          
           `,
         });
 
@@ -62,6 +78,8 @@ function BendoKitchen() {
           example_ja: bendoMeals.example_ja, // 飯：日文例句
           example_cht: bendoMeals.example_cht, // 湯：中文例句
           moraDetails: bendoMeals.moraDetails, // 新配菜：音拍詳細資料
+          partOfSpeech: bendoMeals.partOfSpeech, // 新配菜：詞性
+          wordMapping: bendoMeals.wordMapping, // 新配菜：單字拆解後對應的假名
         };
 
         //因為setState不會馬上更新,所以等他一下(100毫秒)再用console.log印出來看看
