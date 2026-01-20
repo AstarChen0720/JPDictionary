@@ -1,13 +1,12 @@
 // 管理所有有關倉庫（supabase）的事情的元件
 
-import {useState,useEffect,useRef} from "react";
+import { useState, useEffect, useRef } from "react";
 
 //引入已經準備好服務我們的supabase駐點人員
 import supabase from "../supabaseClient.js";
 
 // 定義本地儲物箱的標籤名稱(Key),一定要有
 const LOCAL_STORAGE_KEY = "bendo_localstorage";
-
 
 //將所有有關倉庫的功能和任務背後的邏輯集中在這裡，這樣如果要使用直接調用就好且不用看到裡面的細節
 function BendoWarehouse() {
@@ -22,42 +21,36 @@ function BendoWarehouse() {
 
   //增加便當(通用)
   const addBendo = async (newBendo) => {
-    if (session){
+    if (session) {
       return await addToSupabase(newBendo);
     } else {
       return addToLocalStorage(newBendo);
     }
-  }
+  };
   //查取便當(通用)
   const fetchBendo = async () => {
-    if (session){
+    if (session) {
       return await fetchFromSupabase();
     } else {
       return fetchFromLocalStorage();
     }
-  }
+  };
   //刪除便當(通用)
   const deleteBendo = async (targetID) => {
-    if (session){
+    if (session) {
       return await deleteSupabaseItem(targetID);
-    }else {
+    } else {
       return deleteLocalStorageItem(targetID);
     }
-  }
+  };
   //修改便當(通用)
   const updateBendo = async (targetID, wantUpdateBendo) => {
-    if (session){
+    if (session) {
       return await updateSupabaseItem(targetID, wantUpdateBendo);
-    }else{
+    } else {
       return updateLocalStorageItem(targetID, wantUpdateBendo);
     }
-  }
-
-
-
-
-
-
+  };
 
   // 本地儲存幫手1: 從箱子東西拿出來
   const getLocalData = () => {
@@ -72,7 +65,7 @@ function BendoWarehouse() {
     // 裝箱後放進本地儲物箱,setItem(標籤名稱,裝箱後的東西)
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
   };
-  
+
   //向本地儲物箱增加東西的SOP:addToLocalStorage(想放進儲物箱的東西),將你給他的東西放進瀏覽器的本地儲物箱
   //本地儲物箱雖然是在本地但是仍要裝箱存放(東西才不會被壓壞),所以取出或放入都要拆裝箱
   const addToLocalStorage = (wantSaveBendo) => {
@@ -81,7 +74,7 @@ function BendoWarehouse() {
       //先拿出本地儲物箱東西
       const localBendo = getLocalData();
       //將新東西放進陣列中
-      const newLocalBendo = [ wantSaveBendo, ...localBendo];
+      const newLocalBendo = [wantSaveBendo, ...localBendo];
       //放回儲物箱
       setLocalData(newLocalBendo);
       //回傳新增好的資料讓外面知道
@@ -190,6 +183,7 @@ function BendoWarehouse() {
             moraDetails: wantSaveBendo.moraDetails, //新增音拍詳細資料
             partOfSpeech: wantSaveBendo.partOfSpeech, //新增詞性
             wordMapping: wantSaveBendo.wordMapping, //新增單字拆解後對應的假名
+            variations: wantSaveBendo.variations, //新的所有變化的資料
           },
         ])
         //備註,記得存好後,還要複製一份倉庫架上的東西(有標示倉庫貨品id)的備份給我
@@ -380,6 +374,7 @@ function BendoWarehouse() {
             moraDetails: bendo.moraDetails,
             partOfSpeech: bendo.partOfSpeech,
             wordMapping: bendo.wordMapping,
+            variations: bendo.variations,
           }));
           //直接呼叫supabase上傳,並抓他有沒有錯誤
           const { error } = await supabase
@@ -409,7 +404,7 @@ function BendoWarehouse() {
         //刪除本地資料
         localStorage.removeItem(LOCAL_STORAGE_KEY);
         //清空筆記本資料
-        setOrderHistory([]);  
+        setOrderHistory([]);
         console.log("沒有登入，清空歷史訂單...");
       }
     };
