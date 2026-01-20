@@ -187,6 +187,7 @@ function BendoWarehouse() {
             example_ja: wantSaveBendo.example_ja,
             example_cht: wantSaveBendo.example_cht,
             user_id: session.user.id, //記錄是誰放的
+            moraDetails: wantSaveBendo.moraDetails,//新增音拍詳細資料
           },
         ])
         //備註,記得存好後,還要複製一份倉庫架上的東西(有標示倉庫貨品id)的備份給我
@@ -374,6 +375,7 @@ function BendoWarehouse() {
             example_ja: bendo.example_ja,
             example_cht: bendo.example_cht,
             user_id: session.user.id,
+            moraDetails: bendo.moraDetails,
           }));
           //直接呼叫supabase上傳,並抓他有沒有錯誤
           const { error } = await supabase

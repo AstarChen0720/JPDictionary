@@ -5,3 +5,34 @@
   text-align: left
 }
 
+/* 重音容器：讓假名橫向排列 */
+.mora-container {
+  display: inline-flex;
+  align-items: center; /* 讓文字垂直置中 */
+  margin-left: 10px;
+}
+
+/* 每個音拍的基本樣式 */
+.mora-char {
+  padding: 2px 4px; /* 增加一點內距讓框線不擠 */
+  font-family: inherit;
+  position: relative; /* 為了未來的定位預留 */
+}
+
+/* 高音：上紅色邊框 */
+.pitch-high {
+  border-top: 2px solid #ff4d4f;
+  margin-top: -2px; /* 修正視覺高度 */
+}
+
+/* 低音：下灰色邊框 (你要求的底線) */
+.pitch-low {
+  border-bottom: 2px solid #ccc;
+  color: #666; /* 稍微讓低音文字淡一點，突顯高音 */
+}
+
+/* 下墜：右側紅色邊框 */
+.pitch-drop {
+  border-right: 2px solid #ff4d4f;
+  margin-right: 2px; /* 稍微隔開下一個字 */
+}

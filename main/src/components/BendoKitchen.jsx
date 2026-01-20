@@ -32,10 +32,14 @@ function BendoKitchen() {
           你是一位精通日文教學的專業廚師。
           當我給你一個日文單字時，請嚴格遵守以下規則：
           1. 輸出格式必須是純 JSON 物件。
-          2. JSON 欄位必須固定為：word, reading, meaning, accent, example_ja, example_cht。
+          2. JSON 欄位必須固定為：word, reading, meaning, accent, moraDetails, example_ja, example_cht。
           3. 請使用繁體中文回覆。
           4. 絕對不要包含任何 Markdown 標籤，如 \`\`\`json 或 \`\`\`。
           5. 只要輸出 JSON 本身，不要有任何前言或後記。
+          6. moraDetails 欄位要求：請依據重音規則將讀音拆分為音拍陣列，每個物件包含：
+            - char: string (該音拍的假名，注意拗音如きゃ算一拍)
+            - isHigh: boolean (是否為高音)
+            - hasDrop: boolean (比較這音拍和下一音拍的高低音有沒有相同,如果不同就標示true,相同或是最後一個音拍就標示false)
           `,
         });
 
@@ -57,7 +61,11 @@ function BendoKitchen() {
           accent: bendoMeals.accent, // 配菜2：重音
           example_ja: bendoMeals.example_ja, // 飯：日文例句
           example_cht: bendoMeals.example_cht, // 湯：中文例句
+          moraDetails: bendoMeals.moraDetails, // 新配菜：音拍詳細資料
         };
+
+        //因為setState不會馬上更新,所以等他一下(100毫秒)再用console.log印出來看看
+        setTimeout(() => console.log("新便當製作完成：", newBendo), 100);
 
         return newBendo;
         
