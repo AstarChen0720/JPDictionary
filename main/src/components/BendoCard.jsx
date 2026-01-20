@@ -105,11 +105,11 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
               )}
             </div>
 
-            {/* 右邊：假名與重音標記 */}
+            {/* 右邊：音標與重音標記 */}
             {bendo.moraDetails ? (
               <div
                 className="mora-container"
-                onClick={() => howToSpeech(bendo.bendoName)}
+                onClick={() => howToSpeech(bendo.reading)}
                 style={{ marginBottom: "2px", cursor: "pointer" }}
               >
                 {/* marginBottom微調，讓假名稍微浮起來一點點或對齊視線 */}
@@ -142,7 +142,7 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
             ) : (
               // 如果沒有重音資料(舊便當)，就顯示一般讀音和重音數字
               <div
-                onClick={() => howToSpeech(bendo.bendoName)}
+                onClick={() => howToSpeech(bendo.reading)}
                 style={{
                   fontSize: "1.2rem",
                   color: "#555",
@@ -241,7 +241,7 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                   marginBottom: "20px",
                 }}
               >
-                <div style={{ fontSize: "2.8rem", fontWeight: "bold", cursor: "pointer", }} onClick={() => howToSpeech(currentRead.word || bendo.bendoName)}>
+                <div style={{ fontSize: "2.8rem", fontWeight: "bold", cursor: "pointer", }} onClick={() => howToSpeech(currentRead.reading|| bendo.reading)}>
                   {/* 如果有標好假名的單字就精確顯示,沒有就顯示一般排版的假名  */}
                   {currentRead.wordMapping ? (
                     currentRead.wordMapping.map((item, index) => (
@@ -278,7 +278,7 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                   className="mora-container"
                   onClick={() =>
                     //為保險如果沒有單字就用便當名稱唸
-                    howToSpeech(currentRead.word || bendo.bendoName)
+                    howToSpeech(currentRead.reading || bendo.reading)
                   }
                   style={{ cursor: "pointer" }}
                 >
@@ -392,7 +392,7 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                     }}
                   >
                     <div
-                      onClick={() => howToSpeech(currentMean.example_ja)}
+                      onClick={() => howToSpeech(currentMean.example_ja_kana)}
                       style={{
                         cursor: "pointer",
                         fontSize: "1.2rem",

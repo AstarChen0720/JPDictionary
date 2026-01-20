@@ -56,12 +56,14 @@ function BendoKitchen() {
                     "partOfSpeech": "下一段動詞",
                     "meaning": "意思1",
                     "example_ja": "例句日文",
+                    "example_ja_kana": "例句日文的純假名版本",
                     "example_cht": "例句中文"
                   },
                   {
                     "partOfSpeech": "い形容詞",
                     "meaning": "意思2",
                     "example_ja": "例句日文", 
+                    "example_ja_kana": "例句日文的純假名版本",
                     "example_cht": "例句中文"
                   }
                 ]
