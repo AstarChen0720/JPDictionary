@@ -241,7 +241,16 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                   marginBottom: "20px",
                 }}
               >
-                <div style={{ fontSize: "2.8rem", fontWeight: "bold", cursor: "pointer", }} onClick={() => howToSpeech(currentRead.reading|| bendo.reading)}>
+                <div
+                  style={{
+                    fontSize: "2.8rem",
+                    fontWeight: "bold",
+                    cursor: "pointer",
+                  }}
+                  onClick={() =>
+                    howToSpeech(currentRead.reading || bendo.reading)
+                  }
+                >
                   {/* 如果有標好假名的單字就精確顯示,沒有就顯示一般排版的假名  */}
                   {currentRead.wordMapping ? (
                     currentRead.wordMapping.map((item, index) => (
@@ -374,11 +383,25 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                     style={{
                       fontSize: "1.6rem",
                       fontWeight: "bold",
-                      marginBottom: "20px",
+                      marginBottom: "10px",
                       color: "#333",
                     }}
                   >
                     {currentMean.meaning}
+                  </div>
+                  <div
+                    style={{
+                      borderBottom: "2px solid #414141",
+                    }}
+                  >
+                    {currentMean.meaningInDetail}
+                  </div>
+                  <div
+                    style={{
+                      borderBottom: "2px solid #414141",
+                    }}
+                  >
+                    {currentMean.meaningConcept}
                   </div>
 
                   {/* 例句區 */}
@@ -404,6 +427,9 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                     </div>
                     <div style={{ color: "#888", fontSize: "1rem" }}>
                       {currentMean.example_cht}
+                    </div>
+                    <div style={{ color: "#888", fontSize: "1rem" }}>
+                      {currentMean.example_special}
                     </div>
                   </div>
                 </div>

@@ -55,16 +55,23 @@ function BendoKitchen() {
                   {
                     "partOfSpeech": "下一段動詞",
                     "meaning": "意思1",
+                    "meaningInDetail": "更詳細的意思說明,ex:食べます是從食べる而來意思是更加尊敬的意思",
+                    "meaningConcept": "這個意思的概念性說明,ex:bin就是你家的垃圾桶的意思,綠色的垃圾集裝箱又是不同說法,記得小心不要弄錯了喔",
                     "example_ja": "例句日文",
                     "example_ja_kana": "例句日文的純假名版本",
-                    "example_cht": "例句中文"
+                    "example_cht": "例句中文",
+                    "example_special": "特殊例句,且有強故事性,只有目標那個字是日文,其他都中文,  ex:(在魔王城外帳篷內,明天就要進攻)A:各位我們一定要<日文>成功<日文>!!!",
+
                   },
                   {
                     "partOfSpeech": "い形容詞",
                     "meaning": "意思2",
-                    "example_ja": "例句日文", 
+                    "meaningInDetail": "更詳細的意思說明,ex:食べます是從食べる而來意思是更加尊敬的意思",
+                    "meaningConcept": "這個意思的概念性說明,ex:bin就是你家的垃圾桶的意思,綠色的垃圾集裝箱又是不同說法,記得小心不要弄錯了喔",
+                    "example_ja": "例句日文",
                     "example_ja_kana": "例句日文的純假名版本",
-                    "example_cht": "例句中文"
+                    "example_cht": "例句中文",
+                    "example_special": "特殊例句,且有強故事性,只有茶的字是日文,其他都中文,  ex:(在魔王城外帳篷內,明天就要進攻)A:各位我們一定要success!!!",
                   }
                 ]
               },
