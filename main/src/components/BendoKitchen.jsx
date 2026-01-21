@@ -9,10 +9,41 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const AI_API_KEY = import.meta.env.VITE_AI_API_KEY; //從皮夾內拿會員卡
 const genAI = new GoogleGenerativeAI(AI_API_KEY);
 
+//拿出PIXABAY的會員卡
+const PIXABAY_API_KEY = import.meta.env.VITE_PIXABAY_API_KEY;
+
 //將所有跟烹飪便當的步驟和東西
 function BendoKitchen() {
   //拿一本筆記本來紀錄廚房目前是否正在煮飯中
   const [isCooking, setIsCooking] = useState(false);
+
+  //搜尋圖片SOP:搜尋pixabay對應的圖片並回傳url
+  const searchImageSOP = async (wantSearchItem) => {
+    //檢查如果有搜尋內容才進行搜尋
+    if (!wantSearchItem) return null;
+    console.log("開始搜尋圖片(pixabay):", wantSearchItem);
+    try {
+      //組合要呼叫的網址,encodeURIComponent代表把後面的東西變成安全的網址(因為有時如果有空隔或中文日文再網址會出問題),,lang=ja代表要搜尋的語系是日文,searchType=photo代表我們要搜尋圖片,per_page=3代表只要回傳三張圖片
+      const url = `https://pixabay.com/api/?key=${PIXABAY_API_KEY}&q=${encodeURIComponent(wantSearchItem)}&lang=ja&image_type=photo&per_page=3`;
+
+      //用fetch去搜尋圖片
+      const response = await fetch(url);
+      //因為fetch回傳的東西是json格式,所以要用json()把他轉成物件
+      const data = await response.json();
+
+      //Pixabay 回傳的陣列叫做 hits
+      if (data.hits && data.hits.length > 0) {
+        console.log("成功搜尋到圖片:", data.hits[0].webformatURL);
+        //回傳圖片的網址
+        return data.hits[0].webformatURL;
+      } else {
+        console.log("沒有搜尋到圖片");
+        return null;
+      }
+    } catch (error) {
+      console.error("搜尋圖片SOP錯誤回報:", error);
+    }
+  }
 
   //做菜SOP:將傳進來的客人的點單內容,叫gemini煮完再裝好後送回
   const cookingSOP = async (orderInput) => {
@@ -54,6 +85,7 @@ function BendoKitchen() {
                 "meanings": [ // 該讀音下的多種意思
                   {
                     "partOfSpeech": "下一段動詞",
+                    "partOfSpeechIdentifier": "true或false,如果是名詞或動詞就標true,其他就標false", 
                     "meaning": "意思1",
                     "meaningInDetail": "更詳細的意思說明,ex:食べます是從食べる而來意思是更加尊敬的意思",
                     "meaningConcept": "這個意思的概念性說明,ex:bin就是你家的垃圾桶的意思,綠色的垃圾集裝箱又是不同說法,記得小心不要弄錯了喔",
@@ -65,6 +97,7 @@ function BendoKitchen() {
                   },
                   {
                     "partOfSpeech": "い形容詞",
+                    "partOfSpeechIdentifier": "true或false,如果是名詞或動詞就標true,其他就標false", 
                     "meaning": "意思2",
                     "meaningInDetail": "更詳細的意思說明,ex:食べます是從食べる而來意思是更加尊敬的意思",
                     "meaningConcept": "這個意思的概念性說明,ex:bin就是你家的垃圾桶的意思,綠色的垃圾集裝箱又是不同說法,記得小心不要弄錯了喔",
@@ -105,6 +138,29 @@ function BendoKitchen() {
 
       //然後因為菜全部都糊在一起,所以要把他們分開方便裝成便當
       const bendoMeals = JSON.parse(responseText);
+
+      //判斷要不要查:讓只有動詞或名詞時才去查圖片
+      //.some代表只要一項有符合條件就回傳true,some((每個元素)=>{return 判斷條件})
+      //這句話的意思是:如果任何一個variation裡面的meanings有partOfSpeechIdentifier是"true",就回傳true
+      const shouldSearch = bendoMeals.variations?.some(variation => variation.meanings.some(meaning => meaning.partOfSpeechIdentifier === "true"));
+
+      //如果是名詞或動詞就叫搜尋圖片SOP找圖片並且將圖片塞到variations裡,
+      // 如果gemini沒有給我們單字,就用用戶的輸入內容來搜尋
+      if (shouldSearch) {
+        const wantSearchItem = bendoMeals.word || orderInput;
+        const imageUrl = await searchImageSOP(wantSearchItem);
+
+        //將便當圖片的網址也放進便當的variations裡(這樣比較方便不用改supabase)
+        if (imageUrl) {
+          //遍歷每一個後拆開一層後加入imageUrl欄位
+          bendoMeals.variations = bendoMeals.variations?.map((variation) => ({
+            ...variation,
+            imageUrl: imageUrl,
+          }));
+        }
+      }else{
+        console.log("這不是名詞或動詞,不需要搜尋圖片");
+      }
 
       //做出對應的便當
       const newBendo = {

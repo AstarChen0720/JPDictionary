@@ -27,6 +27,9 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
         border: "2px dashed #ccc",
         padding: "20px",
         margin: "10px 0px",
+        display: "flex",
+        flexDirection: "column",
+        overflowY: "hidden",
       }}
     >
       <button
@@ -189,7 +192,9 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
         /* ================ 樣式 B：新單字卡 (連動選單) ================ */
         (() => {
           //根據目前選到的讀音和意思索引，取得對應的資料
+          //目前選到的讀音是哪個
           const currentRead = bendo.variations[activeReadingIndex];
+          //目前選到的意思是哪個
           const currentMean = currentRead?.meanings[activeMeaningIndex];
           //安全檢查:如果沒有讀音或意思就不顯示內容
           if (!currentRead || !currentMean) return null;
@@ -331,7 +336,8 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                   display: "flex",
                   flex: 1,
                   gap: "20px",
-                  overflow: "hidden",
+                  overflowY: "auto",
+                  minHeight: "0px", // 【關鍵】讓 flex 子元素能正確收縮高度
                 }}
               >
                 {/* 左側：意思索引列 */}
@@ -379,58 +385,113 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                 <div
                   style={{ flex: 1, overflowY: "auto", paddingRight: "10px" }}
                 >
+                  {/* 用felx讓可以左詳解右圖片 */}
                   <div
                     style={{
-                      fontSize: "1.6rem",
-                      fontWeight: "bold",
-                      marginBottom: "10px",
-                      color: "#333",
+                      display: "flex",
+                      gap: "20px",
+                      alignItems: "flex-start",
+                      flexWrap: "wrap",
                     }}
                   >
-                    {currentMean.meaning}
-                  </div>
-                  <div
-                    style={{
-                      borderBottom: "2px solid #414141",
-                    }}
-                  >
-                    {currentMean.meaningInDetail}
-                  </div>
-                  <div
-                    style={{
-                      borderBottom: "2px solid #414141",
-                    }}
-                  >
-                    {currentMean.meaningConcept}
-                  </div>
+                    {/* 左邊文字區 */}
+                    <div style={{ flex: 1, minWidth: "150px" }}>
+                      <div
+                        style={{
+                          fontSize: "1.6rem",
+                          fontWeight: "bold",
+                          marginBottom: "10px",
+                          color: "#333",
+                        }}
+                      >
+                        {currentMean.meaning}
+                      </div>
+                      <div
+                        style={{
+                          borderBottom: "2px solid #414141",
+                        }}
+                      >
+                        {currentMean.meaningInDetail}
+                      </div>
+                      <div
+                        style={{
+                          borderBottom: "2px solid #414141",
+                        }}
+                      >
+                        {currentMean.meaningConcept}
+                      </div>
 
-                  {/* 例句區 */}
-                  <div
-                    style={{
-                      borderLeft: "4px solid #ddd",
-                      paddingLeft: "20px",
-                      backgroundColor: "#fafafa",
-                      padding: "15px",
-                      borderRadius: "0 8px 8px 0",
-                    }}
-                  >
-                    <div
-                      onClick={() => howToSpeech(currentMean.example_ja_kana)}
-                      style={{
-                        cursor: "pointer",
-                        fontSize: "1.2rem",
-                        marginBottom: "8px",
-                        color: "#444",
-                      }}
-                    >
-                      {currentMean.example_ja} (點擊聽發音)
+                      {/* 例句區 */}
+                      <div
+                        style={{
+                          borderLeft: "4px solid #ddd",
+                          paddingLeft: "20px",
+                          backgroundColor: "#fafafa",
+                          padding: "15px",
+                          borderRadius: "0 8px 8px 0",
+                        }}
+                      >
+                        <div
+                          onClick={() =>
+                            howToSpeech(currentMean.example_ja_kana)
+                          }
+                          style={{
+                            cursor: "pointer",
+                            fontSize: "1.2rem",
+                            marginBottom: "8px",
+                            color: "#444",
+                          }}
+                        >
+                          {currentMean.example_ja} (點擊聽發音)
+                        </div>
+                        <div style={{ color: "#888", fontSize: "1rem" }}>
+                          {currentMean.example_cht}
+                        </div>
+                        <div style={{ color: "#888", fontSize: "1rem" }}>
+                          {currentMean.example_special}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ color: "#888", fontSize: "1rem" }}>
-                      {currentMean.example_cht}
-                    </div>
-                    <div style={{ color: "#888", fontSize: "1rem" }}>
-                      {currentMean.example_special}
-                    </div>
+                    {/* 右邊圖片區 */}
+                    {/* 如果是名詞或動詞且有圖片才顯示 */}
+                    {currentMean.partOfSpeechIdentifier === "true" &&
+                      currentRead.imageUrl && (
+                        <div
+                          style={{
+                            width: "250px", // 固定寬度
+                            flexShrink: 0, // 不要被壓縮
+                            border: "1px solid #eee",
+                            padding: "5px",
+                            borderRadius: "8px",
+                            backgroundColor: "white",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                          }}
+                        >
+                          <img
+                            src={currentRead.imageUrl}
+                            alt={currentRead.word || "單字圖片"}
+                            style={{
+                              width: "100%",
+                              height: "auto",
+                              objectFit: "cover",
+                              borderRadius: "4px",
+                              display: "block",
+                            }}
+                            // 加入 onerror 處理，如果圖片壞掉就隱藏自己
+                            onError={(e) => (e.target.style.display = "none")}
+                          />
+                          <div
+                            style={{
+                              fontSize: "0.8rem",
+                              color: "#999",
+                              textAlign: "center",
+                              marginTop: "5px",
+                            }}
+                          >
+                            Pixabay 示意圖
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
               </div>
