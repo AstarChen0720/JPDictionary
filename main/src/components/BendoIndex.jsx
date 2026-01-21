@@ -10,6 +10,7 @@ function BendoIndex({
   setIsLogin,
   deleteBendo,
   setOrderHistory,
+  goToHistoryRoom,
 }) {
   //刪除所有便當
   const DeleteAllBendo = () => {
@@ -26,7 +27,6 @@ function BendoIndex({
   //拿一個筆記本來紀錄現在滑鼠有沒有在便當索引標籤上方
   const [isHover, setIsHover] = useState({});
 
-
   return (
     <div
       className="bendo-index"
@@ -36,7 +36,7 @@ function BendoIndex({
         flexShrink: 0, //不讓這個區塊縮小(防止右邊東西太多時被擠扁)
         top: "0px",
         maxHeight: "80vh",
-        overflowY: "auto",
+        overflowY: "hidden",
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
@@ -69,7 +69,26 @@ function BendoIndex({
           </>
         )}
       </div>
-      <p style={{ alignSelf: "center" }}>歷史便當快速選單</p>
+      <p style={{ alignSelf: "center" }}>最近歷史便當</p>
+      <div
+        onClick={goToHistoryRoom}
+        className="history-btn" // 加個 class 方便如果以後要用 css 改樣式
+        style={{
+          alignSelf: "center",
+          cursor: "pointer",
+          padding: "8px",
+          backgroundColor: "#eee",
+          borderRadius: "5px",
+          marginBottom: "10px",
+          textAlign: "center",
+          width: "80%",
+        }}
+        // 簡單的 hover 效果
+        onMouseEnter={(e) => (e.target.style.backgroundColor = "#ddd")}
+        onMouseLeave={(e) => (e.target.style.backgroundColor = "#eee")}
+      >
+        完整歷史便當
+      </div>
       {orderHistory.map((bendo) => {
         return (
           //便當索引標籤,改成是div且讓叉叉可以在右邊

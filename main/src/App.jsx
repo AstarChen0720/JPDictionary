@@ -22,6 +22,12 @@ import BendoAudio from "./components/BendoAudio.jsx";
 
 //引入便當書籤組件
 import BendoIndex from "./components/BendoIndex.jsx";
+//引入歷史便當儲藏室組件
+
+import HistoryRoom from "./HistoryRoom.jsx";
+
+//引入便當塊組件
+import BendoBlock from "./components/BendoBlock.jsx";
 
 function App() {
   //先拿一本筆記本用來紀錄客人當下點了什麼(他說了什麼)--客人點單筆記本
@@ -31,7 +37,10 @@ function App() {
   const counterRef = useRef(null);
 
   //拿一個筆記本來紀錄登入狀態
-  const [isLogin, setIsLogin] = useState(true);//預設為true讓他一開始就是訪客模式,直到你點登入或註冊按鈕才會顯示登入牆
+  const [isLogin, setIsLogin] = useState(true); //預設為true讓他一開始就是訪客模式,直到你點登入或註冊按鈕才會顯示登入牆
+
+  //拿一個筆記本來紀錄現在顯示的頁面
+  const [currentPage, setCurrentPage] = useState("shop"); //預設顯示店內頁面
 
   //拿一個筆記本來紀錄現在要不要顯示懸浮櫃檯
   //const [showSticky, setShowSticky] = useState(false);
@@ -70,14 +79,13 @@ function App() {
         setOrderInput("");
         //執行向倉庫增加東西的SOP
         addBendo(newBendo);
-        
+
         //將視角跳到剛剛新增的便當那裡
         //因為setState不會馬上更新,所以等他一下(100毫秒)再施展魔法
         setTimeout(() => {
           //翻到指定便當頁數的魔法
           scrollToBendo(newBendo.id);
         }, 100);
-
       }
     }
   };
@@ -124,6 +132,18 @@ function App() {
       window.removeEventListener("keydown", keyboardListener); //在整間餐廳中做"聽keydown事件且執行keyboardListener"這個工作的傾聽者解雇掉(括號內要一模一樣),這裡的return代表這是便當店關閉時要做的工作,而不是要交回什麼東西
     };
   }, []); //空陣列代表這個合約只會這間店每次重新卸載再重建(掛載)時執行一次
+
+  //如果現在頁面是history就顯示歷史儲藏室
+  if (currentPage === "history") {
+    return (
+      <HistoryRoom
+        orderHistory={orderHistory}
+        onBack={() => setCurrentPage("shop")}
+        deleteBendo={deleteBendo}
+        howToSpeech={howToSpeech}
+      />
+    );
+  }
 
   // //監視櫃檯位置的任務
   // //聘請一位監視者,監視櫃檯完全離開或一進入次線範圍就回報
@@ -204,6 +224,7 @@ function App() {
         setIsLogin={setIsLogin}
         deleteBendo={deleteBendo}
         setOrderHistory={setOrderHistory}
+        goToHistoryRoom={() => setCurrentPage("history")} //前往歷史儲藏室的按鈕
       />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
         {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
