@@ -1,3 +1,4 @@
 {
-  "commentTranslate.targetLanguage": "zh-TW"
+  "commentTranslate.targetLanguage": "zh-TW",
+  "commentTranslate.hover.enabled": true
 }

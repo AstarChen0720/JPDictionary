@@ -175,6 +175,7 @@ function BendoKitchen() {
         partOfSpeech: bendoMeals.partOfSpeech, // 新配菜：詞性
         wordMapping: bendoMeals.wordMapping, // 新配菜：單字拆解後對應的假名
         variations: bendoMeals.variations, // 新配菜：所有變化的資料
+        isMastered: false, // 新增欄位：是否已精通，預設為 false
       };
 
       //因為setState不會馬上更新,所以等他一下(100毫秒)再用console.log印出來看看

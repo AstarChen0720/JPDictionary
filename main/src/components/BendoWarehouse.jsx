@@ -184,6 +184,7 @@ function BendoWarehouse() {
             partOfSpeech: wantSaveBendo.partOfSpeech, //新增詞性
             wordMapping: wantSaveBendo.wordMapping, //新增單字拆解後對應的假名
             variations: wantSaveBendo.variations, //新的所有變化的資料
+            isMasterd: wantSaveBendo.isMastered || false, //新增是否已精通欄位,如果沒有給就預設false
           },
         ])
         //備註,記得存好後,還要複製一份倉庫架上的東西(有標示倉庫貨品id)的備份給我
@@ -375,6 +376,7 @@ function BendoWarehouse() {
             partOfSpeech: bendo.partOfSpeech,
             wordMapping: bendo.wordMapping,
             variations: bendo.variations,
+            isMastered: bendo.isMastered || false,
           }));
           //直接呼叫supabase上傳,並抓他有沒有錯誤
           const { error } = await supabase

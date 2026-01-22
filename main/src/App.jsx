@@ -141,6 +141,7 @@ function App() {
         onBack={() => setCurrentPage("shop")}
         deleteBendo={deleteBendo}
         howToSpeech={howToSpeech}
+        updateBendo={updateBendo}
       />
     );
   }
