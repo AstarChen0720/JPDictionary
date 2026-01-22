@@ -2,12 +2,16 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { BrowserRouter } from "react-router-dom";
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <App />
+    {/* 包在最外面，賦予導航能力 */}
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </StrictMode>,
-)
+);
 
 //這是工頭指派工作的地方,所有工人都要集合到這裡聽取工作
 //react是一種工人指派公司,不是某個工頭,而是一群可以叫到具有特定技能的工人的地方

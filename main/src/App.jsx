@@ -2,6 +2,9 @@
 import { useState, useRef, useEffect } from "react";
 import "./App.css";
 
+//引入react-router-dom來讓我可以做頁面導航,useNavigate是動作,帶表要跳到哪個頁面, useLocation是狀態,帶表現在在哪個頁面
+import { Routes, Route, useNavigate, useLocation } from "react-router-dom";
+
 //引入已經準備好服務我們的supabase倉儲駐點服務人員
 import supabase from "./supabaseClient.js";
 
@@ -39,8 +42,9 @@ function App() {
   //拿一個筆記本來紀錄登入狀態
   const [isLogin, setIsLogin] = useState(true); //預設為true讓他一開始就是訪客模式,直到你點登入或註冊按鈕才會顯示登入牆
 
-  //拿一個筆記本來紀錄現在顯示的頁面
-  const [currentPage, setCurrentPage] = useState("shop"); //預設顯示店內頁面
+  //useNavigate是動作,帶表要跳到哪個頁面, useLocation是狀態,帶表現在目前在哪個頁面的資訊
+  const navigate = useNavigate();
+  const location = useLocation();
 
   //拿一個筆記本來紀錄現在要不要顯示懸浮櫃檯
   //const [showSticky, setShowSticky] = useState(false);
@@ -68,6 +72,20 @@ function App() {
     //async如果有等的步驟,就先去做別的事
     //檢查如果點單不是空的再去做便當
     if (orderInput !== "") {
+      // === 新增：日文檢查關卡 ===
+      // 定義日文的正則表達式 (包含平假名、片假名、漢字)
+      const hasJapanese = /[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/.test(
+        orderInput,
+      );
+
+      // 如果輸入的內容完全沒有日文 (例如純英文 hello 或純數字 123)
+      if (!hasJapanese) {
+        alert("請輸入日文！(包含平假名、片假名或漢字)");
+        // 清空輸入框讓客人重填
+        setOrderInput("");
+        return; // 直接結束 SOP，不送去廚房
+      }
+
       //叫廚房區做菜SOP並等他做好菜送回來
       const newBendo = await cookingSOP(orderInput);
       //如果有成功做出便當的話
@@ -133,18 +151,6 @@ function App() {
     };
   }, []); //空陣列代表這個合約只會這間店每次重新卸載再重建(掛載)時執行一次
 
-  //如果現在頁面是history就顯示歷史儲藏室
-  if (currentPage === "history") {
-    return (
-      <HistoryRoom
-        orderHistory={orderHistory}
-        onBack={() => setCurrentPage("shop")}
-        deleteBendo={deleteBendo}
-        howToSpeech={howToSpeech}
-        updateBendo={updateBendo}
-      />
-    );
-  }
 
   // //監視櫃檯位置的任務
   // //聘請一位監視者,監視櫃檯完全離開或一進入次線範圍就回報
@@ -178,13 +184,17 @@ function App() {
   }
 
   return (
-    <div
-      className="BendoShop"
-      style={{ display: "flex", gap: "20px", padding: "20px" }}
-    >
-      {/* 懸浮櫃檯區 因為會擋到單字先關掉*/}
-      {/* 本來想寫if但是jsx中的js不能寫if,故改用&&,因為程式是由左向右執行的所以showSticky為true時才會顯示這個懸浮櫃檯 */}
-      {/* {showSticky && (
+    <Routes>
+      <Route
+        path="/"
+        element={
+          <div
+            className="BendoShop"
+            style={{ display: "flex", gap: "20px", padding: "20px" }}
+          >
+            {/* 懸浮櫃檯區 因為會擋到單字先關掉*/}
+            {/* 本來想寫if但是jsx中的js不能寫if,故改用&&,因為程式是由左向右執行的所以showSticky為true時才會顯示這個懸浮櫃檯 */}
+            {/* {showSticky && (
         <div
           className="StickyBar"
           style={{
@@ -216,68 +226,89 @@ function App() {
           </button>
         </div>
       )} */}
-      {/* --- 會員資訊索和引標籤區 (書籤) --- */}
-      <BendoIndex
-        orderHistory={orderHistory}
-        scrollToBendo={scrollToBendo}
-        session={session}
-        handleLogout={handleLogout}
-        setIsLogin={setIsLogin}
-        deleteBendo={deleteBendo}
-        setOrderHistory={setOrderHistory}
-        goToHistoryRoom={() => setCurrentPage("history")} //前往歷史儲藏室的按鈕
-      />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
-        <div className="Counter" style={{ height: "20vh", padding: "20px" }}>
-          <h2>單字便當店櫃檯</h2>
-          <input
-            type="text"
-            placeholder="請點餐"
-            ref={counterRef} //將標記加在輸入框這東西上
-            value={orderInput} //這輸入框的內容是點單筆記本上的內容
-            onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
-            //下面是當客人按下Enter鍵就執行點餐流程
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !isCooking)
-                //如果按下的是Enter鍵且不是正在煮飯中的話
-                takeOrder(); //就執行點餐流程
-            }}
-          />
-          {/* 再在櫃檯增加一個點餐按鈕,如果正在煮飯就顯示餐點製作中且不能按下,正常情況下按下就送出客人的點單 */}
-          <button onClick={takeOrder} disabled={isCooking}>
-            {isCooking ? "餐點製作中..." : "下單"}
-          </button>
-        </div>
-        {/* 櫃檯--便當顯示區,為何不把.map也搬進去?因為orderHistory很長,且其他人可能也會用到,所以不搬過去才可以都跟同一人拿存取權,比較不亂,其他功能同理 */}
-        <div className="bendo-display">
-          {orderHistory.map((bendo) => {
-            return (
-              <BendoCard
-                bendo={bendo}
-                howToSpeech={howToSpeech}
-                deleteSupabaseItem={deleteBendo}
-                updateSupabaseItem={updateBendo}
-              />
-            );
-          })}
-        </div>
+            {/* --- 會員資訊索和引標籤區 (書籤) --- */}
+            <BendoIndex
+              orderHistory={orderHistory}
+              scrollToBendo={scrollToBendo}
+              session={session}
+              handleLogout={handleLogout}
+              setIsLogin={setIsLogin}
+              deleteBendo={deleteBendo}
+              setOrderHistory={setOrderHistory}
+              goToHistoryRoom={() => navigate("/history")} //前往歷史儲藏室的按鈕
+            />
+            <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+              {/* 櫃檯區,櫃檯會執行點餐流程和秀出歷史訂單在旁邊讓客人參考 */}
+              <div
+                className="Counter"
+                style={{ height: "20vh", padding: "20px" }}
+              >
+                <h2>單字便當店櫃檯</h2>
+                <input
+                  type="text"
+                  placeholder="請點餐"
+                  ref={counterRef} //將標記加在輸入框這東西上
+                  value={orderInput} //這輸入框的內容是點單筆記本上的內容
+                  onChange={(e) => setOrderInput(e.target.value)} //如果輸入框內容有變動就將最新的客人點單內容更新到點單筆記本
+                  //下面是當客人按下Enter鍵就執行點餐流程
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !isCooking)
+                      //如果按下的是Enter鍵且不是正在煮飯中的話
+                      takeOrder(); //就執行點餐流程
+                  }}
+                />
+                {/* 再在櫃檯增加一個點餐按鈕,如果正在煮飯就顯示餐點製作中且不能按下,正常情況下按下就送出客人的點單 */}
+                <button onClick={takeOrder} disabled={isCooking}>
+                  {isCooking ? "餐點製作中..." : "下單"}
+                </button>
+              </div>
+              {/* 櫃檯--便當顯示區,為何不把.map也搬進去?因為orderHistory很長,且其他人可能也會用到,所以不搬過去才可以都跟同一人拿存取權,比較不亂,其他功能同理 */}
+              <div className="bendo-display">
+                {orderHistory.map((bendo) => {
+                  return (
+                    <BendoCard
+                      key={bendo.id}
+                      bendo={bendo}
+                      howToSpeech={howToSpeech}
+                      deleteSupabaseItem={deleteBendo}
+                      updateSupabaseItem={updateBendo}
+                    />
+                  );
+                })}
+              </div>
 
-        {/* 傳送到最上的魔法按鈕 */}
-        <button
-          //top 0 代表滾到最上面(X軸0點)
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          style={{
-            position: "fixed",
-            bottom: "20px",
-            right: "20px",
-            padding: "10px",
-          }}
-        >
-          回到最上
-        </button>
-      </div>
-    </div>
+              {/* 傳送到最上的魔法按鈕 */}
+              <button
+                //top 0 代表滾到最上面(X軸0點)
+                onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+                style={{
+                  position: "fixed",
+                  bottom: "20px",
+                  right: "20px",
+                  padding: "10px",
+                }}
+              >
+                回到最上
+              </button>
+            </div>
+          </div>
+        }
+      />
+      {/* 定義第二條路徑：儲藏室 (/history) -> 顯示 HistoryRoom */}
+      <Route
+        path="/history"
+        element={
+          <HistoryRoom
+            orderHistory={orderHistory}
+            // 修改：使用導覽器回首頁
+            onBack={() => navigate("/")}
+            deleteBendo={deleteBendo}
+            howToSpeech={howToSpeech}
+            updateBendo={updateBendo}
+          />
+        }
+      />
+    </Routes>
   );
 }
 export default App;
