@@ -156,15 +156,6 @@ LV10儲藏室,另一個畫面,專們儲存所有歷史單字
 
 LV11網頁插件,將查詢的網頁插件給做出來
 連結到主網站，選到字就送出整句給網站去查詢精準了解意思，並將送回的單字資訊排在右上角
-1. 連結到網站:讓extension他呼叫vercel,vercel再呼叫網頁的程式
-
-   1. 建制好環境,下載vercel cli 並且連接到我的project,他很方便不用寫好後推上去,只要在網頁根目錄建一個叫api的資料夾,裡面放js檔案(用react時他不支援jsx),他就會自己吧他當作cloud function了
-   2. 用**vercel run**來跑專案,這樣他就會開一個可以被外網連接到的網址,這樣我的chrome extension才可以呼叫他,方便我直接本地測試**(記得要上線要去chrome extension換網址)**
-   3. 寫vercel api 
-   4. 寫chrome extension:chrome他會根據你上傳的zip內的manifest.json來調用檔案,manifest內由三部分組成
-         1. 基本物件:像是名稱,版本,縮圖...
-         2. permission:哪些功能要用(沒寫,就算你組件內有寫要用他也不會用),哪些特定網站要加載這extension(ex只運行在youtube.com)
-         3. 功能組件:有很多有特殊能力和限制的組件,ex:Service Worker(原background):常駐在後台,能操作和偵測到網頁的高級功能(像是網頁寬度),但是不能操作實際網頁DOM
-      1. 似乎可以用react開發但是這次先用js,我先搞懂他是什麼再說(之前的插件忘光了)
+1. 連結到網站
 2. 送出單字時自動送出整句，讓ai可以精準定義
 3. 將送回的資訊拍好顯示在右上角
