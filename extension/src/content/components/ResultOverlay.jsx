@@ -55,7 +55,7 @@ const styles = {
 
 const ResultOverlay = ({ bendoData, onClose }) => {
 
-  // 實作朗讀功能 (先用瀏覽器本來就有的 SpeechSynthesis)
+  // 朗讀功能 (先用瀏覽器本來就有的 SpeechSynthesis)
   const handleSpeak = (text) => {
     if (!text) return;
     window.speechSynthesis.cancel(); // 先停止之前的發音
