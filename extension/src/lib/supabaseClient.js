@@ -4,11 +4,11 @@ import { createClient } from "@supabase/supabase-js";
 //引入為了讓 Supabase 可以在 Chrome Extension 環境下運作的「轉接頭」
 import storageAdapter from "./storageAdapter.js";
 
-
 //倉庫地址
-const supabaseUrl = "https://olyziedvrshemjhpdipz.supabase.co";
+const supabaseUrl = "https://yizbhnnfpazcalwruuxk.supabase.co";
 //從皮夾內拿supabase倉庫的通行證
-const SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9seXppZWR2cnNoZW1qaHBkaXB6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4NTEwNjAsImV4cCI6MjA4MzQyNzA2MH0.AyxLPzxbPH5wJOAoSMYyUPZKN8-7p9uFVYNPNuO394c";
+const SUPABASE_API_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpemJobm5mcGF6Y2Fsd3J1dXhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDc3NDcsImV4cCI6MjA5NTEyMzc0N30.t9Eua7lhTWGjY6Ofzv0uz5Nl1HIKfm4-BEUMme9Yuvc";
 //讓倉儲駐點人員根據倉庫地址和通行證準備好服務我們(ex跟他講要我的倉庫地址才知道要去哪個倉庫)
 
 const supabase = createClient(supabaseUrl, SUPABASE_API_KEY, {
