@@ -453,9 +453,10 @@ function BendoCard({ bendo, deleteSupabaseItem, howToSpeech }) {
                       </div>
                     </div>
                     {/* 右邊圖片區 */}
-                    {/* 如果是名詞或動詞且有圖片才顯示 */}
-                    {(currentMean.partOfSpeechIdentifier === "true" || currentMean.partOfSpeechIdentifier === true) &&
-                      currentRead.imageUrl && (
+                    {/* 如果是名詞或動詞且有圖片才顯示 (相容舊資料，只要不是明確標示 false 就顯示) */}
+                    {currentRead.imageUrl &&
+                      currentMean.partOfSpeechIdentifier !== "false" &&
+                      currentMean.partOfSpeechIdentifier !== false && (
                         <div
                           style={{
                             width: "250px", // 固定寬度
