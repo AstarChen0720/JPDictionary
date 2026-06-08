@@ -123,7 +123,7 @@ Deno.serve(async (req: Request) => {
 
     // 判斷是否需要搜尋圖片 (只要任何一個意思是名詞或動詞就搜尋)
     const shouldSearch = bendoMeals.variations?.some((variation: any) => 
-      variation.meanings.some((meaning: any) => meaning.partOfSpeechIdentifier === "true")
+      variation.meanings.some((meaning: any) => meaning.partOfSpeechIdentifier === "true" || meaning.partOfSpeechIdentifier === true)
     );
 
     // 如果需要搜尋圖片就去 Pixabay 搜尋
